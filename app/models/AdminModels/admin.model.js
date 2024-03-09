@@ -3,7 +3,7 @@ const db = require("../db");
 const { promisify } = require("util");
 const dbQuery = promisify(db.query.bind(db));
 
-// Admin Model
+// ADMIN MODEL
 const Admin = function (admin) {
   this.adminId = admin.adminId;
   this.adminName = admin.adminName;
@@ -18,8 +18,8 @@ const Admin = function (admin) {
   this.passwordUpdatedStatus = admin.passwordUpdatedStatus;
 };
 
-
-Admin.register = async (newAdmin) => {
+// ADMIN REGISTER
+Admin.registration = async (newAdmin) => {
     try {
       const checkEmailQuery =
         "SELECT * FROM Admins WHERE adminEmail = ? AND deleteStatus=0 AND isActive=1";
@@ -51,9 +51,39 @@ Admin.register = async (newAdmin) => {
     }
   };
   
+  
+// ADMIN LOGIN
+Admin.login = async (email, password) => {
+    const query =
+      "SELECT * FROM Admins WHERE adminEmail = ? AND isActive = 1 AND deleteStatus = 0";
+  
+    try {
+      const result = await dbQuery(query, [email]);
+  
+      if (result.length === 0) {
+        throw new Error("Admin not found");
+      }
+  
+      const admin = result[0];
+  
+      const isMatch = await promisify(bcrypt.compare)(
+        password,
+        admin.adminPassword
+      );
+  
+      if (!isMatch) {
+        throw new Error("Wrong password");
+      }
+  
+      return admin;
+    } catch (error) {
+      console.error("Error during admin login:", error);
+      throw error;
+    }
+  };
+  
 
 
 
 
-
-module.exports = Admin;
+module.exports = {Admin};
