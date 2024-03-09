@@ -1,0 +1,124 @@
+1. Admins Table
+
+CREATE TABLE Admins (
+    adminId INT PRIMARY KEY AUTO_INCREMENT,
+    adminName VARCHAR(255) NOT NULL,
+    adminEmail VARCHAR(255) NOT NULL,
+    adminImage VARCHAR(2000) NOT NULL,
+    adminPassword VARCHAR(2000) NOT NULL,
+    registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    isActive INT DEFAULT 1 NOT NULL,
+    deleteStatus INT DEFAULT 0 NOT NULL,
+    updateStatus INT DEFAULT 0 NOT NULL,
+    passwordUpdatedStatus INT DEFAULT 0 NOT NULL
+);
+
+
+2. Managers Table
+
+CREATE TABLE Managers (
+    managerId INT PRIMARY KEY AUTO_INCREMENT,
+    managerName VARCHAR(200) NOT NULL,
+    managerEmail VARCHAR(255) NOT NULL,
+    managerPhone VARCHAR(20),
+    managerPassword VARCHAR(2000) NOT NULL,
+    managerAddress VARCHAR(255),
+    isActive INT DEFAULT 1 NOT NULL,
+    isSuspended INT DEFAULT 0 NOT NULL,
+    registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+2. Clubs
+
+CREATE TABLE Clubs (
+    clubId INT PRIMARY KEY AUTO_INCREMENT,
+    managerId INT NOT NULL,
+    clubName VARCHAR(255) NOT NULL,
+    clubManager VARCHAR(255) NOT NULL,
+    clubManagerPassword VARCHAR(2000) NOT NULL,
+    clubEmail VARCHAR(255) NOT NULL,
+    isActive INT DEFAULT 1 NOT NULL,
+    deleteStatus INT DEFAULT 0 NOT NULL,
+    isSuspended INT DEFAULT 0 NOT NULL,
+    registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (managerId) REFERENCES Managers(managerId)
+);
+
+
+3. Player Table
+
+CREATE TABLE Players (
+    playerId INT PRIMARY KEY,
+    playerName VARCHAR(255) NOT NULL,
+    playerAge INT NOT NULL,
+    playerEmail VARCHAR(255) NOT NULL,
+    clubId INT NOT NULL,
+    teamName VARCHAR(255) NOT NULL,
+    teamOwnerName VARCHAR(255) NOT NULL,
+    isActive INT DEFAULT 1 NOT NULL,
+    updateStatus INT DEFAULT 0 NOT NULL,
+    isSuspended INT DEFAULT 0 NOT NULL,
+    registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    playerPosition VARCHAR(255) NOT NULL,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId)
+);
+
+
+4. Injuries Table
+
+CREATE TABLE Injuries (
+    injuryId INT PRIMARY KEY AUTO_INCREMENT,
+    playerId INT NOT NULL,
+    clubId INT NOT NULL,
+    playerName VARCHAR(255) NOT NULL,
+    injuryType VARCHAR(255) NOT NULL,
+    averageRecoveryPeriod INT NOT NULL,
+    deleteStatus INT DEFAULT 0 NOT NULL,
+    injuryDate DATE NOT NULL,
+    FOREIGN KEY (playerId) REFERENCES Players(playerId),
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId)
+);
+
+
+5. Matches
+
+CREATE TABLE Matches (
+    matchId INT PRIMARY KEY AUTO_INCREMENT,
+    adminId INT NOT NULL,
+    matchName VARCHAR(255) NOT NULL,
+    matchLocation VARCHAR(255) NOT NULL,
+    matchPrize  VARCHAR(50) NOT NULL,
+    matchDate VARCHAR(50) NOT NULL,
+    endStatus INT DEFAULT 0 NOT NULL,
+    deleteStatus INT DEFAULT 0 NOT NULL,
+    FOREIGN KEY (adminId) REFERENCES Admins(adminId)
+);
+
+
+6. HomeTeams
+
+CREATE TABLE HomeTeams (
+    homeTeamId INT PRIMARY KEY AUTO_INCREMENT,
+    homeTeamName VARCHAR(255) NOT NULL,
+    clubId INT NOT NULL,
+    matchId INT NOT NULL,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId),
+    FOREIGN KEY (matchId) REFERENCES Matches(matchId)
+);
+
+7. AwayTeams
+
+CREATE TABLE AwayTeams (
+    awayTeamId INT PRIMARY KEY AUTO_INCREMENT,
+    awayTeamName VARCHAR(255) NOT NULL,
+    clubId INT NOT NULL,
+    matchId INT NOT NULL,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId),
+    FOREIGN KEY (matchId) REFERENCES Matches(matchId)
+);
+
+
+
