@@ -15,7 +15,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/mic/admin', AdminRoutes);
+app.use('/api/admin', AdminRoutes);
 
 
 app.listen(4040, '0.0.0.0', () => {

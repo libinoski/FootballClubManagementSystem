@@ -7,7 +7,7 @@ var connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '',
-    database: 'MedInsCareDB',
+    database: 'FootballClub',
 });
 
 module.exports = connection;
