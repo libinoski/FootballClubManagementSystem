@@ -23,14 +23,13 @@ CREATE TABLE Admins (
 CREATE TABLE Clubs (
     clubId INT PRIMARY KEY AUTO_INCREMENT,
     clubName VARCHAR(255) NOT NULL,
-    ClubImage VARCHAR(2000) NOT NULL,
+    clubImage VARCHAR(2000) NOT NULL,
     clubEmail VARCHAR(255) NOT NULL,
     clubAddress VARCHAR(255) NOT NULL,
     managerName VARCHAR(200) NOT NULL,
     managerImage VARCHAR(2000) NOT NULL,
     managerEmail VARCHAR(255) NOT NULL,
     managerMobile VARCHAR(20),
-    managerAddress VARCHAR(255),
     clubPassword VARCHAR(2000) NOT NULL,
     isActive INT DEFAULT 1 NOT NULL,
     isSuspended INT DEFAULT 0 NOT NULL,
@@ -45,22 +44,25 @@ CREATE TABLE Clubs (
 
 
 CREATE TABLE Players (
-    playerId INT PRIMARY KEY,
+    playerId INT PRIMARY KEY AUTO_INCREMENT,
     clubId INT NOT NULL,
     clubName VARCHAR (255) NOT NULL,
     playerName VARCHAR(255) NOT NULL,
     playerImage VARCHAR(2000) NOT NULL,
     playerAge INT NOT NULL,
     playerEmail VARCHAR(255) NOT NULL,
+    playerMobile VARCHAR(20) NOT NULL,
+    playerCountry VARCHAR(100) NOT NULL,
     playerPosition VARCHAR(255) NOT NULL,
     playerAddress VARCHAR(500) NOT NULL,
+    playerPassword VARCHAR(2000) NOT NULL,
     managerName VARCHAR(255) NOT NULL,
     isActive INT DEFAULT 1 NOT NULL,
     updateStatus INT DEFAULT 0 NOT NULL,
     isSuspended INT DEFAULT 0 NOT NULL,
     isInjured INT DEFAULT 0 NOT NULL,
     registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (clubId) REFERENCES Clubs(clubId)
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE
 );
 
 4. Injuries Table
@@ -71,14 +73,15 @@ CREATE TABLE Injuries (
     clubId INT NOT NULL,
     playerName VARCHAR(255) NOT NULL,
     playerImage VARCHAR(2000) NOT NULL,
-    clubName VARCHAR(255)NOT NULL,
+    clubName VARCHAR(255) NOT NULL,
     injuryType VARCHAR(255) NOT NULL,
     averageRecoveryTime INT NOT NULL,
     deleteStatus INT DEFAULT 0 NOT NULL,
     injuryDate DATE NOT NULL,
-    FOREIGN KEY (playerId) REFERENCES Players(playerId),
-    FOREIGN KEY (clubId) REFERENCES Clubs(clubId)
+    FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE
 );
+
 
 
 5. Matches
@@ -90,16 +93,17 @@ CREATE TABLE Matches (
     matchName VARCHAR(255) NOT NULL,
     homeTeamName VARCHAR(255) NOT NULL,
     awayTeamName VARCHAR(255) NOT NULL,
-    homeTeamImage  VARCHAR(2000) NOT NULL,
-    awayTeamImage  VARCHAR(2000) NOT NULL,
+    homeTeamImage VARCHAR(2000) NOT NULL,
+    awayTeamImage VARCHAR(2000) NOT NULL,
     matchLocation VARCHAR(255) NOT NULL,
-    matchPrize  VARCHAR(50) NOT NULL,
+    matchPrize VARCHAR(50) NOT NULL,
     matchDate VARCHAR(50) NOT NULL,
     endStatus INT DEFAULT 0 NOT NULL,
     deleteStatus INT DEFAULT 0 NOT NULL,
-    FOREIGN KEY (adminId) REFERENCES Admins(adminId),
-    FOREIGN KEY (clubId) REFERENCES Clubs(clubId)
+    FOREIGN KEY (adminId) REFERENCES Admins(adminId) ON DELETE CASCADE,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE
 );
+
 
 
 6. FootballNews
@@ -112,7 +116,7 @@ CREATE TABLE FootballNews (
     addedDate DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updatedDate DATETIME DEFAULT NULL,
     deleteStatus INT DEFAULT 0 NOT NULL,
-    FOREIGN KEY (adminId) REFERENCES Admins(adminId)
+    FOREIGN KEY (adminId) REFERENCES Admins(adminId) ON DELETE CASCADE
 );
 
 

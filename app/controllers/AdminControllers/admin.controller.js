@@ -46,16 +46,11 @@ exports.registration = async (req, res) => {
         }
 
         const adminData = req.body;
-        const adminImageFile = req.file;
+        const adminImageFile = req.files['adminImage'] ? req.files['adminImage'][0] : null;
 
         const validationResults = validateAdminRegistration(adminData, adminImageFile);
 
         if (!validationResults.isValid) {
-            // Delete uploaded image from local storage
-            if (adminImageFile && adminImageFile.filename) {
-                const imagePath = path.join("Files/AdminImages", adminImageFile.filename);
-                fs.unlinkSync(imagePath);
-            }
             return res.status(400).json({
                 status: "failed",
                 message: "Validation failed",
@@ -68,14 +63,9 @@ exports.registration = async (req, res) => {
             const mimeType = adminImageFile.mimetype;
 
             try {
-                const fileLocation = await uploadFileToS3(adminImageFile, fileName, mimeType);
+                const fileLocation = await uploadFileToS3(adminImageFile.buffer, fileName, mimeType);
                 adminData.adminImage = fileLocation;
             } catch (uploadError) {
-                // Delete uploaded image from local storage
-                if (adminImageFile && adminImageFile.filename) {
-                    const imagePath = path.join("Files/AdminImages", adminImageFile.filename);
-                    fs.unlinkSync(imagePath);
-                }
                 return res.status(500).json({
                     status: "failed",
                     message: "Internal server error",
@@ -124,11 +114,6 @@ Football club
                 data: registrationResponse,
             });
         } catch (error) {
-            // Delete uploaded image from local storage
-            if (adminImageFile && adminImageFile.filename) {
-                const imagePath = path.join("Files/AdminImages", adminImageFile.filename);
-                fs.unlinkSync(imagePath);
-            }
 
             // Delete uploaded image from S3 if it exists
             if (adminData.adminImage) {
@@ -210,6 +195,8 @@ Football club
         return validationResults;
     }
 };
+
+
 //
 //
 //

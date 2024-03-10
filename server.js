@@ -5,6 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const AdminRoutes = require('./app/routes/AdminRoutes/admin.routes');
+const ClubRoutes = require('./app/routes/ClubRoutes/club.routes');
+const PlayerRoutes = require('./app/routes/PlayerRoutes/player.routes');
 
 const corsOptions = {
   origin: '*', 
@@ -16,6 +18,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/admin', AdminRoutes);
+app.use('/api/club', ClubRoutes);
+app.use('/api/player', PlayerRoutes);
 
 
 app.listen(4040, '0.0.0.0', () => {

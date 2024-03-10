@@ -42,7 +42,7 @@ const s3Client = new S3Client({
 exports.registration = async (req, res) => {
     const uploadClubImage = multer({
         storage: multer.memoryStorage(),
-    }).single("clubImage");
+    }).fields([{ name: 'clubImage' }, { name: 'managerImage' }]);
 
     uploadClubImage(req, res, async function (err) {
         if (err) {
@@ -54,16 +54,12 @@ exports.registration = async (req, res) => {
         }
 
         const clubData = req.body;
-        const clubImageFile = req.file;
+        const clubImageFile = req.files['clubImage'] ? req.files['clubImage'][0] : null;
+        const managerImageFile = req.files['managerImage'] ? req.files['managerImage'][0] : null;
 
-        const validationResults = validateClubRegistration(clubData, clubImageFile);
+        const validationResults = validateClubRegistration(clubData, clubImageFile, managerImageFile);
 
         if (!validationResults.isValid) {
-            // Delete uploaded image from local storage
-            if (clubImageFile && clubImageFile.filename) {
-                const imagePath = path.join("Files/ClubImages", clubImageFile.filename);
-                fs.unlinkSync(imagePath);
-            }
             return res.status(400).json({
                 status: "failed",
                 message: "Validation failed",
@@ -76,14 +72,25 @@ exports.registration = async (req, res) => {
             const mimeType = clubImageFile.mimetype;
 
             try {
-                const fileLocation = await uploadFileToS3(clubImageFile, fileName, mimeType);
+                const fileLocation = await uploadFileToS3(clubImageFile.buffer, fileName, mimeType);
                 clubData.clubImage = fileLocation;
             } catch (uploadError) {
-                // Delete uploaded image from local storage
-                if (clubImageFile && clubImageFile.filename) {
-                    const imagePath = path.join("Files/ClubImages", clubImageFile.filename);
-                    fs.unlinkSync(imagePath);
-                }
+                return res.status(500).json({
+                    status: "failed",
+                    message: "Internal server error",
+                    error: uploadError.message,
+                });
+            }
+        }
+
+        if (managerImageFile) {
+            const fileName = `managerImage-${Date.now()}${path.extname(managerImageFile.originalname)}`;
+            const mimeType = managerImageFile.mimetype;
+
+            try {
+                const fileLocation = await uploadFileToS3(managerImageFile.buffer, fileName, mimeType);
+                clubData.managerImage = fileLocation;
+            } catch (uploadError) {
                 return res.status(500).json({
                     status: "failed",
                     message: "Internal server error",
@@ -94,10 +101,9 @@ exports.registration = async (req, res) => {
 
         try {
             const registrationResponse = await Club.registration(clubData);
-            // Setup email content
             const mailOptions = {
                 from: process.env.EMAIL_USER,
-                to: registrationResponse.clubEmail, // Assuming email is part of the response
+                to: registrationResponse.clubEmail,
                 subject: "Your Registration Details",
                 text: `Dear ${registrationResponse.clubName},
 
@@ -110,17 +116,15 @@ We're here to support you every step of the way. If you have any questions or ne
 Thank you for choosing Our Football Club Management System. Let's work together to lead the team to success on and off the pitch!
 
 Best regards,
-[Your Name]
+Ajay Kumar MA
 Admin 
 Football club
 `,
             };
 
-            // Send email
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
                     console.error("Error sending email: ", error);
-                    // Optionally handle email sending error, e.g., log or notify admin
                 } else {
                     console.log("Email sent: " + info.response);
                 }
@@ -132,27 +136,32 @@ Football club
                 data: registrationResponse,
             });
         } catch (error) {
-            // Delete uploaded image from local storage
-            if (clubImageFile && clubImageFile.filename) {
-                const imagePath = path.join("Files/ClubImages", clubImageFile.filename);
-                fs.unlinkSync(imagePath);
-            }
-
-            // Delete uploaded image from S3 if it exists
-            if (clubData.clubImage) {
-                const s3Key = clubData.clubImage.split('/').pop();
-                const params = {
-                    Bucket: process.env.S3_BUCKET_NAME,
-                    Key: `clubImages/${s3Key}`
-                };
-                try {
-                    await s3Client.send(new DeleteObjectCommand(params));
-                } catch (s3Error) {
-                    console.error("Error deleting image from S3:", s3Error);
-                }
-            }
-
             if (error.name === "ValidationError") {
+                if (clubData.clubImage) {
+                    const s3Key = clubData.clubImage.split('/').pop();
+                    const params = {
+                        Bucket: process.env.S3_BUCKET_NAME,
+                        Key: `clubImages/${s3Key}`
+                    };
+                    try {
+                        await s3Client.send(new DeleteObjectCommand(params));
+                    } catch (s3Error) {
+                        console.error("Error deleting image from S3:", s3Error);
+                    }
+                }
+
+                if (clubData.managerImage) {
+                    const s3Key = clubData.managerImage.split('/').pop();
+                    const params = {
+                        Bucket: process.env.S3_BUCKET_NAME,
+                        Key: `managerImages/${s3Key}`
+                    };
+                    try {
+                        await s3Client.send(new DeleteObjectCommand(params));
+                    } catch (s3Error) {
+                        console.error("Error deleting image from S3:", s3Error);
+                    }
+                }
                 return res.status(422).json({
                     status: "failed",
                     message: "Validation error during registration",
@@ -167,12 +176,12 @@ Football club
             }
         }
     });
-
+    
     async function uploadFileToS3(fileBuffer, fileName, mimeType) {
         const uploadParams = {
             Bucket: process.env.S3_BUCKET_NAME,
             Key: `clubImages/${fileName}`,
-            Body: fileBuffer.buffer,
+            Body: fileBuffer,
             ACL: "public-read",
             ContentType: mimeType,
         };
@@ -182,68 +191,64 @@ Football club
         return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
     }
 
-    function validateClubRegistration(clubData, clubImageFile) {
+    function validateClubRegistration(clubData, clubImageFile, managerImageFile) {
         const validationResults = {
             isValid: true,
             errors: {},
         };
-        // Name validation
+
         const nameValidation = dataValidator.isValidName(clubData.clubName);
         if (!nameValidation.isValid) {
             validationResults.isValid = false;
             validationResults.errors["clubName"] = [nameValidation.message];
         }
 
-        // Email validation
         const emailValidation = dataValidator.isValidEmail(clubData.clubEmail);
         if (!emailValidation.isValid) {
             validationResults.isValid = false;
             validationResults.errors["clubEmail"] = [emailValidation.message];
         }
 
-        // Address validation
         const addressValidation = dataValidator.isValidAddress(clubData.clubAddress);
         if (!addressValidation.isValid) {
             validationResults.isValid = false;
             validationResults.errors["clubAddress"] = [addressValidation.message];
         }
 
-        // Manager name validation
         const managerNameValidation = dataValidator.isValidName(clubData.managerName);
         if (!managerNameValidation.isValid) {
             validationResults.isValid = false;
             validationResults.errors["managerName"] = [managerNameValidation.message];
         }
 
-        // Manager email validation
         const managerEmailValidation = dataValidator.isValidEmail(clubData.managerEmail);
         if (!managerEmailValidation.isValid) {
             validationResults.isValid = false;
             validationResults.errors["managerEmail"] = [managerEmailValidation.message];
         }
 
-        // Manager phone validation
         const managerMobileValidation = dataValidator.isValidMobileNumber(clubData.managerMobile);
         if (!managerMobileValidation.isValid) {
             validationResults.isValid = false;
             validationResults.errors["managerMobile"] = [managerMobileValidation.message];
         }
 
-        // Club password validation
         const passwordValidation = dataValidator.isValidPassword(clubData.clubPassword);
         if (!passwordValidation.isValid) {
             validationResults.isValid = false;
             validationResults.errors["clubPassword"] = [passwordValidation.message];
         }
 
-        // Image validation
-        const imageValidation = dataValidator.isValidImageWith1MBConstraint(clubImageFile);
-        if (!imageValidation.isValid) {
+        const clubImageValidation = dataValidator.isValidImageWith1MBConstraint(clubImageFile);
+        if (!clubImageValidation.isValid) {
             validationResults.isValid = false;
-            validationResults.errors["clubImage"] = [imageValidation.message];
+            validationResults.errors["clubImage"] = [clubImageValidation.message];
         }
-
-
+        const managerImageValidation = dataValidator.isValidImageWith1MBConstraint(managerImageFile);
+        if (!managerImageValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["managerImage"] = [managerImageValidation.message];
+        }
 
         return validationResults;
     }
@@ -252,7 +257,7 @@ Football club
 //
 //
 //
-// CLUB LOGIN
+// 
 // CLUB LOGIN
 exports.login = async (req, res) => {
     const { clubEmail, clubPassword } = req.body;

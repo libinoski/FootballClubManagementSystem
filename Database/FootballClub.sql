@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 09, 2024 at 10:30 AM
+-- Generation Time: Mar 10, 2024 at 12:34 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -31,6 +31,9 @@ CREATE TABLE `Admins` (
   `adminId` int(11) NOT NULL,
   `adminName` varchar(255) NOT NULL,
   `adminEmail` varchar(255) NOT NULL,
+  `adminAadhar` varchar(200) NOT NULL,
+  `adminMobile` varchar(200) NOT NULL,
+  `adminAddress` varchar(500) NOT NULL,
   `adminImage` varchar(2000) NOT NULL,
   `adminPassword` varchar(2000) NOT NULL,
   `registeredDate` datetime NOT NULL DEFAULT current_timestamp(),
@@ -56,8 +59,7 @@ CREATE TABLE `Clubs` (
   `managerName` varchar(200) NOT NULL,
   `managerImage` varchar(2000) NOT NULL,
   `managerEmail` varchar(255) NOT NULL,
-  `managerPhone` varchar(20) DEFAULT NULL,
-  `managerAddress` varchar(255) DEFAULT NULL,
+  `managerMobile` varchar(20) DEFAULT NULL,
   `clubPassword` varchar(2000) NOT NULL,
   `isActive` int(11) NOT NULL DEFAULT 1,
   `isSuspended` int(11) NOT NULL DEFAULT 0,
@@ -135,13 +137,16 @@ CREATE TABLE `Players` (
   `playerImage` varchar(2000) NOT NULL,
   `playerAge` int(11) NOT NULL,
   `playerEmail` varchar(255) NOT NULL,
+  `playerMobile` varchar(20) NOT NULL,
+  `playerCountry` varchar(100) NOT NULL,
   `playerPosition` varchar(255) NOT NULL,
   `playerAddress` varchar(500) NOT NULL,
+  `playerPassword` varchar(2000) NOT NULL,
   `managerName` varchar(255) NOT NULL,
   `isActive` int(11) NOT NULL DEFAULT 1,
-  `isInjured` int(11) NOT NULL DEFAULT 0,
   `updateStatus` int(11) NOT NULL DEFAULT 0,
   `isSuspended` int(11) NOT NULL DEFAULT 0,
+  `isInjured` int(11) NOT NULL DEFAULT 0,
   `registeredDate` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -226,6 +231,12 @@ ALTER TABLE `Matches`
   MODIFY `matchId` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `Players`
+--
+ALTER TABLE `Players`
+  MODIFY `playerId` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- Constraints for dumped tables
 --
 
@@ -233,27 +244,27 @@ ALTER TABLE `Matches`
 -- Constraints for table `FootballNews`
 --
 ALTER TABLE `FootballNews`
-  ADD CONSTRAINT `footballnews_ibfk_1` FOREIGN KEY (`adminId`) REFERENCES `Admins` (`adminId`);
+  ADD CONSTRAINT `footballnews_ibfk_1` FOREIGN KEY (`adminId`) REFERENCES `Admins` (`adminId`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `Injuries`
 --
 ALTER TABLE `Injuries`
-  ADD CONSTRAINT `injuries_ibfk_1` FOREIGN KEY (`playerId`) REFERENCES `Players` (`playerId`),
-  ADD CONSTRAINT `injuries_ibfk_2` FOREIGN KEY (`clubId`) REFERENCES `Clubs` (`clubId`);
+  ADD CONSTRAINT `injuries_ibfk_1` FOREIGN KEY (`playerId`) REFERENCES `Players` (`playerId`) ON DELETE CASCADE,
+  ADD CONSTRAINT `injuries_ibfk_2` FOREIGN KEY (`clubId`) REFERENCES `Clubs` (`clubId`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `Matches`
 --
 ALTER TABLE `Matches`
-  ADD CONSTRAINT `matches_ibfk_1` FOREIGN KEY (`adminId`) REFERENCES `Admins` (`adminId`),
-  ADD CONSTRAINT `matches_ibfk_2` FOREIGN KEY (`clubId`) REFERENCES `Clubs` (`clubId`);
+  ADD CONSTRAINT `matches_ibfk_1` FOREIGN KEY (`adminId`) REFERENCES `Admins` (`adminId`) ON DELETE CASCADE,
+  ADD CONSTRAINT `matches_ibfk_2` FOREIGN KEY (`clubId`) REFERENCES `Clubs` (`clubId`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `Players`
 --
 ALTER TABLE `Players`
-  ADD CONSTRAINT `players_ibfk_1` FOREIGN KEY (`clubId`) REFERENCES `Clubs` (`clubId`);
+  ADD CONSTRAINT `players_ibfk_1` FOREIGN KEY (`clubId`) REFERENCES `Clubs` (`clubId`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
