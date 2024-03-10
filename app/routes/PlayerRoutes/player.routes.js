@@ -7,7 +7,10 @@ const PlayerController = require('../../controllers/PlayerControllers/player.con
 router.post("/playerRegistration", PlayerController.registration);
 router.post("/playerLogin", PlayerController.login);
 router.post("/playerViewAllClubs", PlayerController.viewAllClubs);
-
+router.post("/playerChangePassword", PlayerController.changePassword);
+router.post("/playerViewProfile", PlayerController.viewProfile);
+router.post("/playerUpdateProfile", PlayerController.updateProfile);
+router.post("/playerViewAllNotifications", PlayerController.viewAllNotifications);
 
 
 

@@ -116,7 +116,6 @@ Player.registration = async (newPlayer, clubId) => {
         throw error;
     }
 };
-
 //
 //
 //
@@ -155,7 +154,185 @@ Player.login = async (email, password) => {
 //
 //
 //
+// PLAYER CHANGE PASSWORD
+Player.changePassword = async (playerId, oldPassword, newPassword) => {
+    const checkPlayerQuery =
+        "SELECT * FROM Players WHERE playerId = ? AND isActive = 1";
+
+    try {
+        const selectRes = await dbQuery(checkPlayerQuery, [playerId]);
+        if (selectRes.length === 0) {
+            throw new Error("Player not found");
+        }
+
+        const player = selectRes[0];
+        const isMatch = await promisify(bcrypt.compare)(
+            oldPassword,
+            player.playerPassword
+        );
+
+        if (!isMatch) {
+            throw new Error("Incorrect old password");
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        const updatePasswordQuery = `
+            UPDATE Players
+            SET
+                updatedDate = CURRENT_DATE(),
+                playerPassword = ?,
+                passwordUpdateStatus = 1
+            WHERE playerId = ? AND isActive = 1
+        `;
+
+        const updatePasswordValues = [hashedNewPassword, playerId];
+
+        await dbQuery(updatePasswordQuery, updatePasswordValues);
+
+        console.log(
+            "Player password updated successfully for playerId:",
+            playerId
+        );
+        return { message: "Password updated successfully" };
+    } catch (error) {
+        throw error;
+    }
+};
 //
+//
+//
+//
+// PLAYER VIEW PROFILE
+Player.viewProfile = async (playerId) => {
+  const query =
+  "SELECT playerId, clubId, clubName, playerName, playerImage, playerAge, playerEmail, playerMobile, playerCountry, playerPosition, playerAddress, managerName, registeredDate FROM Players WHERE playerId = ? AND isActive = 1";
+
+try {
+  const result = await dbQuery(query, [playerId]);
+
+  if (result.length === 0) {
+    throw new Error("Player not found");
+  }
+
+  return result[0];
+} catch (error) {
+  throw error;
+}
+};
+//
+//
+//
+//
+//
+// PLAYER UPDATE PROFILE
+Player.updateProfile = async (updatedPlayer) => {
+    const checkPlayerQuery =
+        "SELECT * FROM Players WHERE playerId = ? AND deleteStatus = 0 AND isSuspended = 0 AND isActive = 1";
+
+    try {
+        const selectRes = await dbQuery(checkPlayerQuery, [
+            updatedPlayer.playerId,
+        ]);
+
+        if (selectRes.length === 0) {
+            throw new Error("Player not found");
+        }
+
+        const checkMobileQuery =
+            "SELECT * FROM Players WHERE playerMobile = ? AND playerId != ? AND deleteStatus = 0 AND isSuspended = 0 AND isActive = 1";
+        const mobileRes = await dbQuery(checkMobileQuery, [
+            updatedPlayer.playerMobile,
+            updatedPlayer.playerId,
+        ]);
+
+        if (mobileRes.length > 0) {
+            throw new Error("Mobile Number Already Exists.");
+        }
+
+        const updateQuery = `
+              UPDATE Players
+              SET
+                  updateStatus = 1,
+                  isSuspended = 0,
+                  isActive = 1,
+                  playerName = ?,
+                  playerAge = ?,
+                  playerMobile = ?,
+                  playerCountry = ?,
+                  playerPosition = ?,
+                  playerAddress = ?
+              WHERE playerId = ? AND deleteStatus = 0 AND isSuspended = 0 AND isActive = 1
+          `;
+
+        await dbQuery(updateQuery, [
+            updatedPlayer.playerName,
+            updatedPlayer.playerAge,
+            updatedPlayer.playerMobile,
+            updatedPlayer.playerCountry,
+            updatedPlayer.playerPosition,
+            updatedPlayer.playerAddress,
+            updatedPlayer.playerId,
+        ]);
+
+        const updatedDetailsRes = await dbQuery(checkPlayerQuery, [
+            updatedPlayer.playerId,
+        ]);
+
+        if (updatedDetailsRes.length === 0) {
+            throw new Error("Error fetching updated player details.");
+        }
+
+        return updatedDetailsRes[0]; // Return updated player details
+    } catch (error) {
+        console.error("Error updating player profile:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+// PLAYER VIEW ALL NOTIFICATIONS FROM CLUB
+Player.viewAllNotifications = async (playerId) => {
+    try {
+        // Fetch patient details
+        const playerQuery = `
+            SELECT *
+            FROM Players
+            WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
+        `;
+        const playerQueryResult = await dbQuery(playerQuery, [playerId]);
+
+        if (playerQueryResult.length === 0) {
+            throw new Error("player not found");
+        }
+
+        // Fetch all notifications for the patient
+        const viewAllNotificationsQuery = `
+            SELECT *
+            FROM Notification_To_Players
+            WHERE playerId = ? AND isSuccess = 1
+        `;
+        const allNotifications = await dbQuery(viewAllNotificationsQuery, [playerId]);
+
+        // Check if there are no notifications found
+        if (allNotifications.length === 0) {
+            throw new Error("No successful notifications found for this player");
+        }
+
+        return allNotifications; // Return notifications
+    } catch (error) {
+        console.error("Error viewing all notifications for player:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+//
+
+
 
 
 

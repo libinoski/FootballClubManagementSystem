@@ -109,7 +109,7 @@ CREATE TABLE Matches (
 6. FootballNews
 
 CREATE TABLE FootballNews (
-    newsId INT PRIMARY KEY AUTO_INCREMENT,
+    footballNewsId INT PRIMARY KEY AUTO_INCREMENT,
     adminId INT NOT NULL,
     newsImage VARCHAR(2000) NOT NULL,
     newsContent TEXT NOT NULL,
@@ -117,6 +117,20 @@ CREATE TABLE FootballNews (
     updatedDate DATETIME DEFAULT NULL,
     deleteStatus INT DEFAULT 0 NOT NULL,
     FOREIGN KEY (adminId) REFERENCES Admins(adminId) ON DELETE CASCADE
+);
+
+
+7. Notification_To_Players
+
+CREATE TABLE Notification_To_Players (
+    notificationId INT PRIMARY KEY AUTO_INCREMENT,
+    clubId INT NOT NULL,
+    playerId INT NOT NULL,
+    message VARCHAR(2000) NOT NULL,
+    sendDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    isSuccess INT DEFAULT 1,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE,
+    FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE
 );
 
 

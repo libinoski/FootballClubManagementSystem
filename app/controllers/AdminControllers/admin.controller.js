@@ -195,8 +195,6 @@ Football club
         return validationResults;
     }
 };
-
-
 //
 //
 //
@@ -273,6 +271,569 @@ exports.login = async (req, res) => {
     }
 };
 // 
+//
+//
+//
+//
+// ADMIN CHANGE PASSWORD
+exports.changePassword = async (req, res) => {
+    const token = req.headers.token;
+    const { adminId, oldPassword, newPassword } = req.body;
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    // Check if adminId is missing
+    if (!adminId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Admin ID is missing"
+        });
+    }
+
+    jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY_ADMIN,
+        async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Token has expired"
+                    });
+                }
+                return res.status(403).json({
+                    status: "failed",
+                    message: "Unauthorized access"
+                });
+            }
+
+            if (decoded.adminId != adminId) {
+                return res.status(403).json({
+                    status: "failed",
+                    message: "Unauthorized access"
+                });
+            }
+
+            try {
+                function validateAdminChangePassword() {
+                    const validationResults = {
+                        isValid: true,
+                        errors: {},
+                    };
+
+                    // Validate old password
+                    const passwordValidation = dataValidator.isValidPassword(oldPassword);
+                    if (!passwordValidation.isValid) {
+                        validationResults.isValid = false;
+                        validationResults.errors["oldPassword"] = [passwordValidation.message];
+                    }
+
+                    // Validate new password
+                    const newPasswordValidation = dataValidator.isValidPassword(newPassword);
+                    if (!newPasswordValidation.isValid) {
+                        validationResults.isValid = false;
+                        validationResults.errors["newPassword"] = [newPasswordValidation.message];
+                    }
+
+                    return validationResults;
+                }
+
+                const validationResults = validateAdminChangePassword();
+                if (!validationResults.isValid) {
+                    return res.status(400).json({
+                        status: "failed",
+                        message: "Validation failed",
+                        results: validationResults.errors
+                    });
+                }
+
+                await Admin.changePassword(adminId, oldPassword, newPassword);
+                return res.status(200).json({
+                    status: "success",
+                    message: "Password changed successfully"
+                });
+            } catch (error) {
+                if (
+                    error.message === "Admin not found" ||
+                    error.message === "Incorrect old password"
+                ) {
+                    return res.status(422).json({
+                        status: "failed",
+                        message: "Password change failed",
+                        error: error.message
+                    });
+                } else {
+                    console.error("Error changing admin password:", error);
+                    return res.status(500).json({
+                        status: "failed",
+                        message: "Internal server error",
+                        error: error.message
+                    });
+                }
+            }
+        }
+    );
+};
+//
+//
+//
+//
+//
+// ADMIN VIEW PROFILE
+exports.viewProfile = async (req, res) => {
+    const token = req.headers.token;
+    const { adminId } = req.body;
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    // Check if adminId is missing
+    if (!adminId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Admin ID is missing"
+        });
+    }
+
+    try {
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    }
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                if (decoded.adminId != adminId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch admin profile
+                try {
+                    const result = await Admin.viewProfile(adminId);
+                    return res.status(200).json({
+                        status: "success",
+                        data: result
+                    });
+                } catch (error) {
+                    if (error.message === "Admin not found") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        console.error("Error fetching admin profile:", error);
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+// ADMIN UPDATE PROFILE
+exports.updateProfile = async (req, res) => {
+    const token = req.headers.token;
+    const {
+        adminId,
+        adminName,
+        adminAadhar,
+        adminMobile,
+        adminAddress,
+    } = req.body;
+
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    if (!adminId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Admin ID is missing"
+        });
+    }
+
+    jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY_ADMIN,
+        async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Token has expired"
+                    });
+                }
+                return res.status(403).json({
+                    status: "failed",
+                    message: "Unauthorized access"
+                });
+            }
+
+            if (decoded.adminId != adminId) {
+                return res.status(403).json({
+                    status: "failed",
+                    message: "Unauthorized access"
+                });
+            }
+
+            // Remove spaces from Aadhar number and mobile number
+            const updatedAdmin = {
+                adminId,
+                adminName,
+                adminEmail,
+                adminAadhar: adminAadhar.replace(/\s/g, ''),
+                adminMobile: adminMobile.replace(/\s/g, ''),
+                adminAddress,
+            };
+
+            function validateAdminUpdateProfile() {
+                const validationResults = {
+                    isValid: true,
+                    errors: {},
+                };
+
+                const nameValidation = dataValidator.isValidName(adminName);
+                if (!nameValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["adminName"] = [nameValidation.message];
+                }
+
+
+                const aadharValidation =
+                    dataValidator.isValidAadharNumber(updatedAdmin.adminAadhar);
+                if (!aadharValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["adminAadhar"] = [
+                        aadharValidation.message,
+                    ];
+                }
+
+                const mobileValidation =
+                    dataValidator.isValidMobileNumber(updatedAdmin.adminMobile);
+                if (!mobileValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["adminMobile"] = [
+                        mobileValidation.message,
+                    ];
+                }
+
+                const addressValidation = dataValidator.isValidAddress(adminAddress);
+                if (!addressValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["adminAddress"] = [
+                        addressValidation.message,
+                    ];
+                }
+
+                return validationResults;
+            }
+
+            const validationResults = validateAdminUpdateProfile();
+
+            if (!validationResults.isValid) {
+                return res.status(400).json({
+                    status: "failed",
+                    message: "Validation failed",
+                    results: validationResults.errors,
+                });
+            }
+
+            try {
+                const updatedData = await Admin.updateProfile(updatedAdmin);
+                return res.status(200).json({
+                    status: "success",
+                    message: "Admin updated successfully",
+                    data: updatedData,
+                });
+            } catch (error) {
+                console.error("Error updating admin profile:", error);
+                if (
+                    error.message === "Admin not found" ||
+                    error.message === "Aadhar Number Already Exists."
+                ) {
+                    return res.status(422).json({
+                        status: "error",
+                        error: error.message
+                    });
+                } else if (
+                    error.message === "Error fetching updated admin details."
+                ) {
+                    return res.status(500).json({
+                        status: "failed",
+                        message: error.message
+                    });
+                } else {
+                    return res.status(500).json({
+                        status: "failed",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        }
+    );
+};
+//
+//
+//
+//
+//
+// ADMIN ADD NEWS
+exports.addNews = async (req, res) => {
+    const token = req.headers.token;
+
+    try {
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                const uploadNewsImage = multer({
+                    storage: multer.memoryStorage(),
+                }).single("footballNewsImage");
+
+                uploadNewsImage(req, res, async function (err) {
+                    if (err) {
+                        console.error("File upload failed:", err);
+                        return res.status(400).json({
+                            status: "error",
+                            message: "File upload failed",
+                            results: err.message,
+                        });
+                    }
+
+                    const { adminId } = req.body;
+
+                    if (!adminId) {
+                        console.error("Admin ID is missing");
+                        return res.status(401).json({
+                            status: "failed",
+                            message: "Admin ID is missing"
+                        });
+                    }
+
+                    if (decoded.adminId !== adminId) {
+                        console.error("Unauthorized access");
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Unauthorized access"
+                        });
+                    }
+
+                    const newsData = req.body;
+                    const newsImageFile = req.file;
+
+                    const validationResults = validateFootballNewsData(newsData, newsImageFile);
+
+                    if (!validationResults.isValid) {
+                        console.error("Validation failed:", validationResults.errors);
+                        return res.status(400).json({
+                            status: "error",
+                            message: "Validation failed",
+                            results: validationResults.errors,
+                        });
+                    }
+
+                    try {
+                        const imageUrl = await uploadFileToS3(
+                            newsImageFile.buffer,
+                            newsImageFile.originalname,
+                            newsImageFile.mimetype
+                        );
+
+                        const newFootballNews = {
+                            footballNewsTitle: newsData.footballNewsTitle,
+                            footballNewsContent: newsData.footballNewsContent,
+                            footballNewsImage: imageUrl,
+                        };
+
+                        const addedNewsId = await Admin.addNews(
+                            newsData.adminId,
+                            newFootballNews
+                        );
+                        return res.status(200).json({
+                            status: "success",
+                            message: "Football news added successfully",
+                            data: { footballNewsId: addedNewsId, ...newFootballNews },
+                        });
+                    } catch (error) {
+                        console.error("Error during adding football news:", error);
+                        if (error.message === "Admin not found" && newsImageFile) {
+                            const s3Key = req.file.key.split('/').pop();
+                            const params = {
+                                Bucket: process.env.S3_BUCKET_NAME,
+                                Key: `Files/footballNewsImages/${s3Key}`
+                            };
+                            try {
+                                await s3Client.send(new DeleteObjectCommand(params));
+                            } catch (s3Error) {
+                                console.error("Error deleting news image from S3:", s3Error);
+                            }
+                        }
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+                });
+            }
+        );
+    } catch (error) {
+        console.error("Error during adding football news:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+
+    // Function to validate football news data
+    function validateFootballNewsData(newsData, newsImageFile) {
+        const validationResults = {
+            isValid: true,
+            errors: {},
+        };
+
+        const titleValidation = dataValidator.isValidTitle(
+            newsData.footballNewsTitle
+        );
+        if (!titleValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["NewsTitle"] =
+                titleValidation.message;
+        }
+
+        const contentValidation = dataValidator.isValidText(
+            newsData.footballNewsContent
+        );
+        if (!contentValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["NewsContent"] =
+                contentValidation.message;
+        }
+
+        if (!newsImageFile) {
+            validationResults.isValid = false;
+            validationResults.errors["footballNewsImage"] =
+                "Football news image is required";
+        } else {
+            const imageValidation =
+                dataValidator.isValidImageWith1MBConstraint(newsImageFile);
+            if (!imageValidation.isValid) {
+                validationResults.isValid = false;
+                validationResults.errors["footballNewsImage"] =
+                    imageValidation.message;
+            }
+        }
+
+        return validationResults;
+    }
+
+    // Function to upload file to S3
+    async function uploadFileToS3(fileBuffer, fileName, mimeType) {
+        try {
+            const uploadParams = {
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: `footballNewsImages/${fileName}`,
+                Body: fileBuffer,
+                ACL: "public-read",
+                ContentType: mimeType,
+            };
+            const command = new PutObjectCommand(uploadParams);
+            await s3Client.send(command);
+            return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
+        } catch (error) {
+            throw error;
+        }
+    }
+};
+//
+//
+//
+//
+//
 
 
 

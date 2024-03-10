@@ -178,7 +178,7 @@ Your Sports Club Team
             }
         }
     });
-    
+
     async function uploadFileToS3(fileBuffer, fileName) {
         const mimeType = fileBuffer.mimetype;
         const uploadParams = {
@@ -344,4 +344,466 @@ exports.login = async (req, res) => {
 //
 //
 //
+// PLAYER CHANGE PASSWORD
+exports.changePassword = async (req, res) => {
+    const token = req.headers.token;
+    const { playerId, oldPassword, newPassword } = req.body;
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    // Check if playerId is missing
+    if (!playerId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Player ID is missing"
+        });
+    }
+
+    jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY_PLAYER,
+        async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Token has expired"
+                    });
+                }
+                return res.status(403).json({
+                    status: "failed",
+                    message: "Unauthorized access"
+                });
+            }
+
+            if (decoded.playerId != playerId) {
+                return res.status(403).json({
+                    status: "failed",
+                    message: "Unauthorized access"
+                });
+            }
+
+            try {
+                function validatePlayerChangePassword() {
+                    const validationResults = {
+                        isValid: true,
+                        errors: {},
+                    };
+
+                    // Validate old password
+                    const passwordValidation = dataValidator.isValidPassword(oldPassword);
+                    if (!passwordValidation.isValid) {
+                        validationResults.isValid = false;
+                        validationResults.errors["oldPassword"] = [passwordValidation.message];
+                    }
+
+                    // Validate new password
+                    const newPasswordValidation = dataValidator.isValidPassword(newPassword);
+                    if (!newPasswordValidation.isValid) {
+                        validationResults.isValid = false;
+                        validationResults.errors["newPassword"] = [newPasswordValidation.message];
+                    }
+
+                    return validationResults;
+                }
+
+                const validationResults = validatePlayerChangePassword();
+                if (!validationResults.isValid) {
+                    return res.status(400).json({
+                        status: "failed",
+                        message: "Validation failed",
+                        results: validationResults.errors
+                    });
+                }
+
+                await Player.changePassword(playerId, oldPassword, newPassword);
+                return res.status(200).json({
+                    status: "success",
+                    message: "Password changed successfully"
+                });
+            } catch (error) {
+                if (
+                    error.message === "Player not found" ||
+                    error.message === "Incorrect old password"
+                ) {
+                    return res.status(422).json({
+                        status: "failed",
+                        message: "Password change failed",
+                        error: error.message
+                    });
+                } else {
+                    console.error("Error changing player password:", error);
+                    return res.status(500).json({
+                        status: "failed",
+                        message: "Internal server error",
+                        error: error.message
+                    });
+                }
+            }
+        }
+    );
+};
 //
+//
+//
+// PLAYER VIEW PROFILE
+exports.viewProfile = async (req, res) => {
+    const token = req.headers.token;
+    const { playerId } = req.body;
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    // Check if playerId is missing
+    if (!playerId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Player ID is missing"
+        });
+    }
+
+    try {
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_PLAYER,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    }
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                if (decoded.playerId != playerId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch player profile
+                try {
+                    const result = await Player.viewProfile(playerId);
+                    return res.status(200).json({
+                        status: "success",
+                        data: result
+                    });
+                } catch (error) {
+                    if (error.message === "Player not found") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        console.error("Error fetching player profile:", error);
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+//
+// PLAYER UPDATE PROFILE
+exports.updateProfile = async (req, res) => {
+    const token = req.headers.token;
+    const {
+        playerId,
+        playerName,
+        playerAge,
+        playerMobile,
+        playerCountry,
+        playerPosition,
+        playerAddress
+    } = req.body;
+
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    if (!clubId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Club ID is missing"
+        });
+    }
+
+    jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY_CLUB,
+        async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Token has expired"
+                    });
+                }
+                return res.status(403).json({
+                    status: "failed",
+                    message: "Unauthorized access"
+                });
+            }
+
+            if (decoded.clubId != clubId) {
+                return res.status(403).json({
+                    status: "failed",
+                    message: "Unauthorized access"
+                });
+            }
+
+            // Remove spaces from Aadhar number and mobile number
+            const updatedPlayer = {
+                playerId,
+                playerName,
+                playerMobile: playerMobile.replace(/\s/g, ''),
+                playerAddress,
+                playerCountry,
+                playerPosition
+            };
+
+            function validatePlayerUpdateProfile() {
+                const validationResults = {
+                    isValid: true,
+                    errors: {},
+                };
+
+                const nameValidation = dataValidator.isValidName(playerName);
+                if (!nameValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["playerName"] = [nameValidation.message];
+                }
+
+                const mobileValidation =
+                    dataValidator.isValidMobileNumber(updatedPlayer.playerMobile);
+                if (!mobileValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["playerMobile"] = [
+                        mobileValidation.message,
+                    ];
+                }
+
+                const addressValidation = dataValidator.isValidAddress(playerAddress);
+                if (!addressValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["playerAddress"] = [
+                        addressValidation.message,
+                    ];
+                }
+
+                const ageValidation = dataValidator.isValidAge(playerAge);
+                if (!ageValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["playerAge"] = [
+                        ageValidation.message,
+                    ];
+                }
+
+                const countryValidationValidation = dataValidator.isValidText(playerCountry);
+                if (!countryValidationValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["playerCountry"] = [countryValidationValidation.message];
+                }
+
+                const posistionValidationValidation = dataValidator.isValidText(playerPosition);
+                if (!posistionValidationValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["playerPosition"] = [posistionValidationValidation.message];
+                }
+
+
+                return validationResults;
+            }
+
+            const validationResults = validatePlayerUpdateProfile();
+
+            if (!validationResults.isValid) {
+                return res.status(400).json({
+                    status: "failed",
+                    message: "Validation failed",
+                    results: validationResults.errors,
+                });
+            }
+
+            try {
+                const updatedData = await Player.updateProfile(updatedPlayer);
+                return res.status(200).json({
+                    status: "success",
+                    message: "Club updated successfully",
+                    data: updatedData,
+                });
+            } catch (error) {
+                console.error("Error updating club profile:", error);
+                if (
+                    error.message === "Club not found" ||
+                    error.message === "Aadhar Number Already Exists."
+                ) {
+                    return res.status(422).json({
+                        status: "error",
+                        error: error.message
+                    });
+                } else if (
+                    error.message === "Error fetching updated club details."
+                ) {
+                    return res.status(500).json({
+                        status: "failed",
+                        message: error.message
+                    });
+                } else {
+                    return res.status(500).json({
+                        status: "failed",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        }
+    );
+};
+//
+//
+//
+//
+// PLAYER VIEW ALL NOTIFICATIONS FROM CLUB
+exports.viewAllNotifications = async (req, res) => {
+    try {
+      const token = req.headers.token;
+      const {playerId} = req.body;
+  
+      // Check if token is missing
+      if (!token) {
+        return res.status(403).json({
+          status: "failed",
+          message: "Token is missing"
+        });
+      }
+  
+      // Check if hospitalStaffId is missing
+      if (!playerId) {
+        return res.status(401).json({
+          status: "failed",
+          message: "Player ID is missing"
+        });
+      }
+  
+      // Verifying the token
+      jwt.verify(token, process.env.JWT_SECRET_KEY_PLAYER, async (err, decoded) => {
+        if (err) {
+          if (err.name === "JsonWebTokenError") {
+            return res.status(403).json({
+              status: "error",
+              message: "Invalid token"
+            });
+          } else if (err.name === "TokenExpiredError") {
+            return res.status(403).json({
+              status: "error",
+              message: "Token has expired"
+            });
+          } else {
+            return res.status(403).json({
+              status: "failed",
+              message: "Unauthorized access"
+            });
+          }
+        }
+  
+        try {
+          // Check if decoded token matches hospitalStaffId from request body
+          if (decoded.playerId != playerId) {
+            return res.status(403).json({
+              status: "error",
+              message: "Unauthorized access"
+            });
+          }
+  
+          const notifications = await Player.viewAllNotifications(playerId);
+  
+          return res.status(200).json({
+            status: "success",
+            message: "All notifications retrieved successfully",
+            data: notifications
+          });
+        } catch (error) {
+          // Handle specific errors returned by the model
+          if (error.message === "Player not found") {
+            return res.status(422).json({
+              status: "error",
+              message: "Player not found",
+              error : error.message
+            });
+          } else if (error.message === "No successful notifications found for this player") {
+            return res.status(422).json({
+              status: "error",
+              message: "No successful notifications found for this player",
+              error : error.message
+            });
+          }
+  
+          console.error("Error viewing all notifications for player:", error);
+          return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error during viewAllNotifications:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: error.message
+      });
+    }
+  };
