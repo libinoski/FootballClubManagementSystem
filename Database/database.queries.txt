@@ -33,6 +33,7 @@ CREATE TABLE Clubs (
     clubPassword VARCHAR(2000) NOT NULL,
     isActive INT DEFAULT 1 NOT NULL,
     isSuspended INT DEFAULT 0 NOT NULL,
+    updateStatus INT DEFAULT 1 NOT NULL,
     registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -61,6 +62,7 @@ CREATE TABLE Players (
     updateStatus INT DEFAULT 0 NOT NULL,
     isSuspended INT DEFAULT 0 NOT NULL,
     isInjured INT DEFAULT 0 NOT NULL,
+    isApproved INT DEFAULT 0 NOT NULL,
     registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE
 );
@@ -89,7 +91,6 @@ CREATE TABLE Injuries (
 CREATE TABLE Matches (
     matchId INT PRIMARY KEY AUTO_INCREMENT,
     adminId INT NOT NULL,
-    clubId INT NOT NULL,
     matchName VARCHAR(255) NOT NULL,
     homeTeamName VARCHAR(255) NOT NULL,
     awayTeamName VARCHAR(255) NOT NULL,
@@ -100,9 +101,9 @@ CREATE TABLE Matches (
     matchDate VARCHAR(50) NOT NULL,
     endStatus INT DEFAULT 0 NOT NULL,
     deleteStatus INT DEFAULT 0 NOT NULL,
-    FOREIGN KEY (adminId) REFERENCES Admins(adminId) ON DELETE CASCADE,
-    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE
+    FOREIGN KEY (adminId) REFERENCES Admins(adminId) ON DELETE CASCADE
 );
+
 
 
 
@@ -111,8 +112,9 @@ CREATE TABLE Matches (
 CREATE TABLE FootballNews (
     footballNewsId INT PRIMARY KEY AUTO_INCREMENT,
     adminId INT NOT NULL,
-    newsImage VARCHAR(2000) NOT NULL,
-    newsContent TEXT NOT NULL,
+    footballNewsImage VARCHAR(2000) NOT NULL,
+    footballNewsTItle VARCHAR(2000) NOT NULL,
+    footballNewsContent VARCHAR(2000) NOT NULL,
     addedDate DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updatedDate DATETIME DEFAULT NULL,
     deleteStatus INT DEFAULT 0 NOT NULL,

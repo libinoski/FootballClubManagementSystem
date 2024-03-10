@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 10, 2024 at 12:34 AM
+-- Generation Time: Mar 10, 2024 at 10:59 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -53,7 +53,7 @@ CREATE TABLE `Admins` (
 CREATE TABLE `Clubs` (
   `clubId` int(11) NOT NULL,
   `clubName` varchar(255) NOT NULL,
-  `ClubImage` varchar(2000) NOT NULL,
+  `clubImage` varchar(2000) NOT NULL,
   `clubEmail` varchar(255) NOT NULL,
   `clubAddress` varchar(255) NOT NULL,
   `managerName` varchar(200) NOT NULL,
@@ -62,6 +62,7 @@ CREATE TABLE `Clubs` (
   `managerMobile` varchar(20) DEFAULT NULL,
   `clubPassword` varchar(2000) NOT NULL,
   `isActive` int(11) NOT NULL DEFAULT 1,
+  `updateStatus` int(11) NOT NULL DEFAULT 0,
   `isSuspended` int(11) NOT NULL DEFAULT 0,
   `registeredDate` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -73,10 +74,11 @@ CREATE TABLE `Clubs` (
 --
 
 CREATE TABLE `FootballNews` (
-  `newsId` int(11) NOT NULL,
+  `footballNewsId` int(11) NOT NULL,
   `adminId` int(11) NOT NULL,
-  `newsImage` varchar(2000) NOT NULL,
-  `newsContent` text NOT NULL,
+  `footballNewsTItle` varchar(2000) NOT NULL,
+  `footballNewsImage` varchar(2000) NOT NULL,
+  `footballNewsContent` varchar(2000) NOT NULL,
   `addedDate` datetime NOT NULL DEFAULT current_timestamp(),
   `updatedDate` datetime DEFAULT NULL,
   `deleteStatus` int(11) NOT NULL DEFAULT 0
@@ -110,7 +112,6 @@ CREATE TABLE `Injuries` (
 CREATE TABLE `Matches` (
   `matchId` int(11) NOT NULL,
   `adminId` int(11) NOT NULL,
-  `clubId` int(11) NOT NULL,
   `matchName` varchar(255) NOT NULL,
   `homeTeamName` varchar(255) NOT NULL,
   `awayTeamName` varchar(255) NOT NULL,
@@ -121,6 +122,21 @@ CREATE TABLE `Matches` (
   `matchDate` varchar(50) NOT NULL,
   `endStatus` int(11) NOT NULL DEFAULT 0,
   `deleteStatus` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Notification_To_Players`
+--
+
+CREATE TABLE `Notification_To_Players` (
+  `notificationId` int(11) NOT NULL,
+  `clubId` int(11) NOT NULL,
+  `playerId` int(11) NOT NULL,
+  `message` varchar(2000) NOT NULL,
+  `sendDate` datetime DEFAULT current_timestamp(),
+  `isSuccess` int(11) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -144,8 +160,10 @@ CREATE TABLE `Players` (
   `playerPassword` varchar(2000) NOT NULL,
   `managerName` varchar(255) NOT NULL,
   `isActive` int(11) NOT NULL DEFAULT 1,
+  `deleteStatus` int(11) NOT NULL DEFAULT 0,
   `updateStatus` int(11) NOT NULL DEFAULT 0,
   `isSuspended` int(11) NOT NULL DEFAULT 0,
+  `isApproved` int(11) NOT NULL DEFAULT 0,
   `isInjured` int(11) NOT NULL DEFAULT 0,
   `registeredDate` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -170,7 +188,7 @@ ALTER TABLE `Clubs`
 -- Indexes for table `FootballNews`
 --
 ALTER TABLE `FootballNews`
-  ADD PRIMARY KEY (`newsId`),
+  ADD PRIMARY KEY (`footballNewsId`),
   ADD KEY `adminId` (`adminId`);
 
 --
@@ -186,8 +204,15 @@ ALTER TABLE `Injuries`
 --
 ALTER TABLE `Matches`
   ADD PRIMARY KEY (`matchId`),
-  ADD KEY `adminId` (`adminId`),
-  ADD KEY `clubId` (`clubId`);
+  ADD KEY `adminId` (`adminId`);
+
+--
+-- Indexes for table `Notification_To_Players`
+--
+ALTER TABLE `Notification_To_Players`
+  ADD PRIMARY KEY (`notificationId`),
+  ADD KEY `clubId` (`clubId`),
+  ADD KEY `playerId` (`playerId`);
 
 --
 -- Indexes for table `Players`
@@ -204,19 +229,19 @@ ALTER TABLE `Players`
 -- AUTO_INCREMENT for table `Admins`
 --
 ALTER TABLE `Admins`
-  MODIFY `adminId` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `adminId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `Clubs`
 --
 ALTER TABLE `Clubs`
-  MODIFY `clubId` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `clubId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `FootballNews`
 --
 ALTER TABLE `FootballNews`
-  MODIFY `newsId` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `footballNewsId` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Injuries`
@@ -231,10 +256,16 @@ ALTER TABLE `Matches`
   MODIFY `matchId` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `Notification_To_Players`
+--
+ALTER TABLE `Notification_To_Players`
+  MODIFY `notificationId` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `Players`
 --
 ALTER TABLE `Players`
-  MODIFY `playerId` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `playerId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Constraints for dumped tables
@@ -257,8 +288,14 @@ ALTER TABLE `Injuries`
 -- Constraints for table `Matches`
 --
 ALTER TABLE `Matches`
-  ADD CONSTRAINT `matches_ibfk_1` FOREIGN KEY (`adminId`) REFERENCES `Admins` (`adminId`) ON DELETE CASCADE,
-  ADD CONSTRAINT `matches_ibfk_2` FOREIGN KEY (`clubId`) REFERENCES `Clubs` (`clubId`) ON DELETE CASCADE;
+  ADD CONSTRAINT `matches_ibfk_1` FOREIGN KEY (`adminId`) REFERENCES `Admins` (`adminId`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `Notification_To_Players`
+--
+ALTER TABLE `Notification_To_Players`
+  ADD CONSTRAINT `notification_to_players_ibfk_1` FOREIGN KEY (`clubId`) REFERENCES `Clubs` (`clubId`) ON DELETE CASCADE,
+  ADD CONSTRAINT `notification_to_players_ibfk_2` FOREIGN KEY (`playerId`) REFERENCES `Players` (`playerId`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `Players`
