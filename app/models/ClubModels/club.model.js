@@ -632,6 +632,46 @@ Club.sendNotificationToPlayer = async (clubId, playerId, notificationMessage) =>
 //
 //
 //
+// CLUB ADD ONE INJURY UPDATE
+
+Club.addOneInjuryUpdate= async function (clubId, playerId,injuryData) {
+    try {
+        // Validate club
+        const clubExistsQuery = "SELECT clubId, clubName FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+        const clubResult = await dbQuery(clubExistsQuery, [clubId]);
+        if (clubResult.length === 0) throw new Error("Club not found");
+        const clubName = clubResult[0].clubName;
+
+        // Fetch hospitalId associated with the playerId
+        const playerExistsQuery = "SELECT hospitalId, playerName, playerProfileImage FROM Players WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0";
+        const playerResult = await dbQuery(playerExistsQuery, [playerId]);
+        if (playerResult.length === 0) throw new Error("Patient not found");
+        const hospitalId = playerResult[0].hospitalId;
+        const playerName = playerResult[0].playerName;
+        const playerProfileImage = playerResult[0].playerProfileImage;
+
+        // Insert review
+        const insertReviewQuery = "INSERT INTO Reviews (clubId, playerId, reviewContent, hospitalId, sendDate, isActive, deleteStatus, playerName, playerProfileImage, clubName) VALUES (?, ?, ?, ?, NOW(), 1, 0, ?, ?, ?)";
+        const insertResult = await dbQuery(insertReviewQuery, [clubId, playerId, reviewContent, hospitalId, playerName, playerProfileImage, clubName]);
+        const reviewId = insertResult.insertId;
+
+        // Return the relevant review details
+        return {
+            reviewId: reviewId,
+            playerId: playerId,
+            clubId: clubId,
+            reviewContent: reviewContent,
+            hospitalId: hospitalId,
+            playerName: playerName,
+            playerProfileImage: playerProfileImage,
+            clubName: clubName,
+            sendDate: new Date().toISOString(),
+        };
+    } catch (error) {
+        console.error("Error submitting review by player:", error);
+        throw error;
+    }
+};
   
   
 
