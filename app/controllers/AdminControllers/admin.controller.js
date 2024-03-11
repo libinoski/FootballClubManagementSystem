@@ -46,7 +46,8 @@ exports.registration = async (req, res) => {
         }
 
         const adminData = req.body;
-        const adminImageFile = req.files['adminImage'] ? req.files['adminImage'][0] : null;
+        const adminImageFile = req.file ? req.file : null;
+
 
         const validationResults = validateAdminRegistration(adminData, adminImageFile);
 
@@ -76,6 +77,8 @@ exports.registration = async (req, res) => {
 
         try {
             const registrationResponse = await Admin.registration(adminData);
+            console.log('registrationResponse.adminName',registrationResponse.adminName)
+            console.log('registrationResponse.adminEmail',registrationResponse.adminEmail)
             // Setup email content
             const mailOptions = {
                 from: process.env.EMAIL_USER,
@@ -177,6 +180,14 @@ Football club
         if (!emailValidation.isValid) {
             validationResults.isValid = false;
             validationResults.errors["adminEmail"] = [emailValidation.message];
+        }
+
+
+        // Address validation
+        const addressValidation = dataValidator.isValidAddress(adminData.adminAddress);
+        if (!addressValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["adminAddress"] = [addressValidation.message];
         }
 
         const imageValidation = dataValidator.isValidImageWith1MBConstraint(adminImageFile);

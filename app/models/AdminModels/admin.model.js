@@ -22,16 +22,15 @@ const Admin = function (admin) {
 //
 //
 // ADMIN REGISTER
-Admin.registration = async (newAdmin) => {
+Admin.registration = async (adminData) => {
   try {
     const checkEmailQuery =
       "SELECT * FROM Admins WHERE adminEmail = ? AND deleteStatus=0 AND isActive=1";
 
     const errors = {};
 
-    const emailRes = await dbQuery(checkEmailQuery, [
-      newAdmin.adminEmail,
-    ]);
+    // Check if email already exists
+    const emailRes = await dbQuery(checkEmailQuery, [adminData.adminEmail]);
     if (emailRes.length > 0) {
       errors["Email"] = ["Email already exists"];
     }
@@ -41,13 +40,13 @@ Admin.registration = async (newAdmin) => {
     }
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash(newAdmin.adminPassword, 10);
-    newAdmin.adminPassword = hashedPassword;
+    const hashedPassword = await bcrypt.hash(adminData.adminPassword, 10);
+    adminData.adminPassword = hashedPassword;
 
     const insertQuery = "INSERT INTO Admins SET ?";
-    const insertRes = await dbQuery(insertQuery, newAdmin);
+    const insertRes = await dbQuery(insertQuery, adminData);
 
-    return { adminId: insertRes.insertId, ...newAdmin };
+    return { adminId: insertRes.insertId, ...adminData };
   } catch (error) {
     console.error("Error during admin registration in model:", error);
     throw error;
@@ -144,7 +143,7 @@ Admin.changePassword = async (adminId, oldPassword, newPassword) => {
 // ADMIN VIEW PROFILE
 Admin.viewProfile = async (adminId) => {
   const query =
-    "SELECT adminId, adminName, adminImage, adminEmail, adminAadhar, adminMobile, adminAddress, registeredDate FROM Admins WHERE adminId = ? AND deleteStatus = 0 AND isActive = 1";
+    "SELECT adminId, adminName, adminImage, adminEmail, adminMobile, adminAddress, registeredDate FROM Admins WHERE adminId = ? AND deleteStatus = 0 AND isActive = 1";
 
   try {
     const result = await dbQuery(query, [adminId]);

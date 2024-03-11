@@ -54,10 +54,11 @@ exports.registration = async (req, res) => {
         }
 
         const clubData = req.body;
-        const clubImageFile = req.files['clubImage'] ? req.files['clubImage'][0] : null;
-        const managerImageFile = req.files['managerImage'] ? req.files['managerImage'][0] : null;
+        const clubImageFile = req.files && req.files['clubImage'] ? req.files['clubImage'][0] : null; // Check if req.files exists before accessing 'clubImage'
+        const managerImageFile = req.files && req.files['managerImage'] ? req.files['managerImage'][0] : null; // Check if req.files exists before accessing 'managerImage'
 
         const validationResults = validateClubRegistration(clubData, clubImageFile, managerImageFile);
+
 
         if (!validationResults.isValid) {
             return res.status(400).json({

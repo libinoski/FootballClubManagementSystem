@@ -4,7 +4,6 @@ CREATE TABLE Admins (
     adminId INT PRIMARY KEY AUTO_INCREMENT,
     adminName VARCHAR(255) NOT NULL,
     adminEmail VARCHAR(255) NOT NULL,
-    adminAadhar VARCHAR(200) NOT NULL,
     adminMobile VARCHAR(200) NOT NULL,
     adminAddress VARCHAR(500) NOT NULL,
     adminImage VARCHAR(2000) NOT NULL,

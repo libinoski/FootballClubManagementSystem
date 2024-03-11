@@ -79,7 +79,7 @@ exports.registration = async (req, res) => {
         }
 
         const playerData = req.body;
-        const playerImageFile = req.files['playerImage'] ? req.files['playerImage'][0] : null;
+        const playerImageFile = req.file ? req.file : null;
         const clubId = req.body.clubId;
 
         // Check if clubId is missing
@@ -151,15 +151,17 @@ Your Sports Club Team
             // Handling errors
             if (playerData.playerImage) {
                 // Deleting uploaded image from S3 in case of error
-                const s3Key = playerData.playerImage.split('/').pop();
-                const params = {
-                    Bucket: process.env.S3_BUCKET_NAME,
-                    Key: `playerImages/${s3Key}`
-                };
-                try {
-                    await s3Client.send(new DeleteObjectCommand(params));
-                } catch (s3Error) {
-                    console.error("Error deleting image from S3:", s3Error);
+                const s3Key = playerData.playerImage ? playerData.playerImage.split('/').pop() : null;
+                if (s3Key) {
+                    const params = {
+                        Bucket: process.env.S3_BUCKET_NAME,
+                        Key: `playerImages/${s3Key}`
+                    };
+                    try {
+                        await s3Client.send(new DeleteObjectCommand(params));
+                    } catch (s3Error) {
+                        console.error("Error deleting image from S3:", s3Error);
+                    }
                 }
             }
 
@@ -179,11 +181,10 @@ Your Sports Club Team
         }
     });
 
-    async function uploadFileToS3(fileBuffer, fileName) {
-        const mimeType = fileBuffer.mimetype;
+    async function uploadFileToS3(fileBuffer, fileName, mimeType) {
         const uploadParams = {
             Bucket: process.env.S3_BUCKET_NAME,
-            Key: `playerImages/${fileName}-${Date.now()}.${mimeType.split('/')[1]}`,
+            Key: `playerImages/${fileName}`,
             Body: fileBuffer,
             ACL: "public-read",
             ContentType: mimeType,
@@ -265,6 +266,9 @@ Your Sports Club Team
         return validationResults;
     }
 };
+
+
+
 //
 //
 //
