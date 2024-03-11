@@ -329,6 +329,43 @@ Player.viewAllNotifications = async (playerId) => {
 //
 //
 //
+// 
+// PLAYER VIEW ONE NOTIFICATION
+Player.viewOneNotification = async (notificationId, playerId) => {
+    try {
+        // Check if playerId exists in Players table
+        const playerQuery = `
+            SELECT *
+            FROM Players
+            WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
+        `;
+        const playerResult = await dbQuery(playerQuery, [playerId]);
+
+        if (playerResult.length === 0) {
+            throw new Error("Player not found or not active");
+        }
+
+        // Fetch notification details
+        const notificationQuery = `
+            SELECT *
+            FROM Notification_To_Players
+            WHERE notificationId = ? AND playerId = ?
+        `;
+        const notificationResult = await dbQuery(notificationQuery, [notificationId, playerId]);
+
+        if (notificationResult.length === 0) {
+            throw new Error("Notification not found for this player");
+        }
+
+        return notificationResult[0]; // Return notification details
+    } catch (error) {
+        console.error("Error viewing notification for player:", error);
+        throw error;
+    }
+};
+//
+//
+//
 //
 // PLAYER SEND LEAVE REQUEST TO CLUB
 Player.sendLeaveRequestToClub = async (clubId, playerId, message) => {
@@ -367,6 +404,44 @@ Player.sendLeaveRequestToClub = async (clubId, playerId, message) => {
         return leaveRequestDetails;
     } catch (error) {
         console.error("Error sending leave request to club:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+// PLAYER VIEW ALL APPROVED LEAVE REQUESTS FROM CLUB
+Player.viewAllApprovedLeaveRequests = async (playerId) => {
+    try {
+        // Check if playerId exists in Players table
+        const playerQuery = `
+            SELECT *
+            FROM Players
+            WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
+        `;
+        const playerResult = await dbQuery(playerQuery, [playerId]);
+
+        if (playerResult.length === 0) {
+            throw new Error("Player not found or not active");
+        }
+
+        // Fetch all approved leave requests for the player
+        const leaveRequestsQuery = `
+            SELECT *
+            FROM Leave_Request_To_Club
+            WHERE playerId = ? AND isApproved = 1
+        `;
+        const leaveRequests = await dbQuery(leaveRequestsQuery, [playerId]);
+
+        // Check if there are no approved leave requests found
+        if (leaveRequests.length === 0) {
+            throw new Error("No approved leave requests found for this player");
+        }
+
+        return leaveRequests; // Return approved leave requests
+    } catch (error) {
+        console.error("Error viewing approved leave requests for player:", error);
         throw error;
     }
 };

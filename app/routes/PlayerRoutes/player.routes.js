@@ -11,7 +11,9 @@ router.post("/playerChangePassword", PlayerController.changePassword);
 router.post("/playerViewProfile", PlayerController.viewProfile);
 router.post("/playerUpdateProfile", PlayerController.updateProfile);
 router.post("/playerViewAllNotifications", PlayerController.viewAllNotifications);
+router.post("/playerViewOneNotification", PlayerController.viewOneNotification);
 router.post("/playerSendLeaveRequestToClub", PlayerController.sendLeaveRequestToClub);
+router.post("/playerViewAllApprovedLeaveRequests", PlayerController.viewAllApprovedLeaveRequests);
 
 
 

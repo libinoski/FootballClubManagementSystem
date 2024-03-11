@@ -631,7 +631,6 @@ Club.sendNotificationToPlayer = async (clubId, playerId, message) => {
 //
 //
 //
-//
 // CLUB ADD ONE INJURY UPDATE
 Club.addOneInjuryUpdate = async (playerId, clubId, injuryData) => {
     try {
@@ -680,11 +679,133 @@ Club.addOneInjuryUpdate = async (playerId, clubId, injuryData) => {
         throw error;
     }
 };
+//
+//
+//
+//
+// CLUB VIEW ALL LEAVE REQUESTS
+Club.viewAllLeaveRequests = async (clubId) => {
+    try {
+        // Fetch club details
+        const clubQuery = `
+            SELECT *
+            FROM Players
+            WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
+        `;
+        const clubQueryResult = await dbQuery(clubQuery, [clubId]);
 
+        if (clubQueryResult.length === 0) {
+            throw new Error("club not found");
+        }
 
+        // Fetch all notifications for the patient
+        const viewAllleaveRequestsQuery = `
+            SELECT *
+            FROM Leave_Request_To_Club
+            WHERE clubId = ? AND isSuccess = 1 AND isApproved = 0
+        `;
+        const allLeaveRequests = await dbQuery(viewAllleaveRequestsQuery, [clubId]);
 
-  
-  
+        // Check if there are no leave requests found
+        if (allLeaveRequests.length === 0) {
+            throw new Error("No successful leave requests found for this player");
+        }
 
+        return allLeaveRequests; // Return leave requests
+    } catch (error) {
+        console.error("Error viewing all leave requests for player:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+//
+// CLUB VIEW ONE LEAVE REQUEST
+Club.viewOneLeaveRequest = async (leaveRequestId, clubId) => {
+    try {
+        // Fetch club details to ensure the club exists and is active
+        const clubQuery = `
+            SELECT *
+            FROM Clubs
+            WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+        const clubQueryResult = await dbQuery(clubQuery, [clubId]);
+
+        if (clubQueryResult.length === 0) {
+            throw new Error("Club not found or inactive");
+        }
+
+        // Fetch the leave request using leaveRequestId and clubId
+        const viewOneLeaveRequestQuery = `
+            SELECT *
+            FROM Leave_Request_To_Club
+            WHERE leaveRequestId = ? AND clubId = ? AND isSuccess = 1 AND isApproved = 0
+        `;
+        const leaveRequest = await dbQuery(viewOneLeaveRequestQuery, [leaveRequestId, clubId]);
+
+        // Check if the leave request exists
+        if (leaveRequest.length === 0) {
+            throw new Error("Leave request not found or not eligible for viewing");
+        }
+
+        return leaveRequest[0]; // Return the leave request
+    } catch (error) {
+        console.error("Error viewing leave request:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+// CLUB APPROVE ONE LEAVE REQUEST
+Club.approveOneLeaveRequest = async (leaveRequestId, clubId) => {
+    try {
+        // Fetch club details to ensure the club exists and is active
+        const clubQuery = `
+            SELECT *
+            FROM Clubs
+            WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+        const clubQueryResult = await dbQuery(clubQuery, [clubId]);
+
+        if (clubQueryResult.length === 0) {
+            throw new Error("Club not found or inactive");
+        }
+
+        // Fetch the leave request using leaveRequestId and clubId
+        const viewOneLeaveRequestQuery = `
+            SELECT *
+            FROM Leave_Request_To_Club
+            WHERE leaveRequestId = ? AND clubId = ? AND isSuccess = 1 AND isApproved = 0
+        `;
+        const leaveRequest = await dbQuery(viewOneLeaveRequestQuery, [leaveRequestId, clubId]);
+
+        // Check if the leave request exists
+        if (leaveRequest.length === 0) {
+            throw new Error("Leave request not found or not eligible for approval");
+        }
+
+        // Update the leave request to mark it as approved
+        const approveLeaveRequestQuery = `
+            UPDATE Leave_Request_To_Club
+            SET isApproved = 1
+            WHERE leaveRequestId = ? AND clubId = ?
+        `;
+        await dbQuery(approveLeaveRequestQuery, [leaveRequestId, clubId]);
+
+        return leaveRequestId; // Return the approved leave request ID
+    } catch (error) {
+        console.error("Error approving leave request:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+//
 
 module.exports = { Club };

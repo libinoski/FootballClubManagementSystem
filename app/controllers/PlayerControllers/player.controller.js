@@ -811,8 +811,111 @@ exports.viewAllNotifications = async (req, res) => {
 //
 //
 //
+// PLAYER VIEW ONE NOTIFICATION FROM CLUB
+exports.viewOneNotification = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { playerId, notificationId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if playerId is missing
+        if (!playerId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Player ID is missing"
+            });
+        }
+
+        // Check if notificationId is missing
+        if (!notificationId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Notification ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(token, process.env.JWT_SECRET_KEY_PLAYER, async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Token has expired"
+                    });
+                } else {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+            }
+
+            try {
+                // Check if decoded token matches playerId from request body
+                if (decoded.playerId != playerId) {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                const notification = await Player.viewOneNotification(playerId, notificationId);
+
+                return res.status(200).json({
+                    status: "success",
+                    message: "Notification retrieved successfully",
+                    data: notification
+                });
+            } catch (error) {
+                // Handle specific errors returned by the model
+                if (error.message === "Player not found") {
+                    return res.status(422).json({
+                        status: "error",
+                        message: "Player not found",
+                        error: error.message
+                    });
+                } else if (error.message === "Notification not found") {
+                    return res.status(422).json({
+                        status: "error",
+                        message: "Notification not found",
+                        error: error.message
+                    });
+                }
+
+                console.error("Error viewing one notification for player:", error);
+                return res.status(500).json({
+                    status: "error",
+                    message: "Internal server error",
+                    error: error.message
+                });
+            }
+        });
+    } catch (error) {
+        console.error("Error during viewOneNotification:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
 //
 //
+//
+//
+// PLAYER SEND LEAVE REQUEST TO CLUB
 exports.sendLeaveRequestToClub = async (req, res) => {
     try {
         const token = req.headers.token;
@@ -930,6 +1033,103 @@ exports.sendLeaveRequestToClub = async (req, res) => {
     } catch (error) {
         // Handle unexpected errors
         console.error("Error in sendLeaveRequestToClub controller:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
+//
+//
+//
+//
+// PLAYER VIEW ALL APPROVED LEAVE REQUESTS FROM CLUB
+exports.viewAllApprovedLeaveRequests = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { playerId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Verify the token
+        jwt.verify(token, process.env.JWT_SECRET_KEY_PLAYER, async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Token has expired"
+                    });
+                } else {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+            }
+
+            try {
+                // Check if playerId is missing
+                if (!playerId) {
+                    return res.status(401).json({
+                        status: "failed",
+                        message: "Player ID is missing"
+                    });
+                }
+
+                // Verify if decoded token matches playerId from request body
+                if (decoded.playerId != playerId) {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Call the model method to view all approved leave requests
+                const leaveRequests = await Player.viewAllApprovedLeaveRequests(playerId);
+
+                return res.status(200).json({
+                    status: "success",
+                    message: "All approved leave requests retrieved successfully",
+                    data: leaveRequests
+                });
+            } catch (error) {
+                // Handle specific errors returned by the model
+                if (error.message === "Player not found or not active") {
+                    return res.status(404).json({
+                        status: "error",
+                        message: "Player not found or not active",
+                        error: error.message
+                    });
+                } else if (error.message === "No approved leave requests found for this player") {
+                    return res.status(404).json({
+                        status: "error",
+                        message: "No approved leave requests found for this player",
+                        error: error.message
+                    });
+                }
+
+                console.error("Error viewing approved leave requests for player:", error);
+                return res.status(500).json({
+                    status: "error",
+                    message: "Internal server error",
+                    error: error.message
+                });
+            }
+        });
+    } catch (error) {
+        console.error("Error during viewApprovedLeaveRequests:", error);
         return res.status(500).json({
             status: "error",
             message: "Internal server error",

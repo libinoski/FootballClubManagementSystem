@@ -22,6 +22,9 @@ router.post("/clubViewAllSuspendedPlayers", ClubController.viewAllSuspendedPlaye
 router.post("/clubViewOneSuspendedPlayer", ClubController.viewOneSuspendedPlayer);
 router.post("/clubSendNotificationToPlayer", ClubController.sendNotificationToPlayer);
 router.post("/clubAddOneInjuryUpdate", ClubController.addOneInjuryUpdate);
+router.post("/clubViewAllLeaveRequests", ClubController.viewAllLeaveRequests);
+router.post("/clubViewOneLeaveRequest", ClubController.viewOneLeaveRequest);
+router.post("/clubApproveOneLeaveRequest", ClubController.approveOneLeaveRequest);
 
 
 
