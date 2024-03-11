@@ -135,4 +135,18 @@ CREATE TABLE Notification_To_Players (
     FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE
 );
 
+7
+
+CREATE TABLE Leave_Request_To_Club (
+    leaveRequestId INT PRIMARY KEY AUTO_INCREMENT,
+    clubId INT NOT NULL,
+    playerId INT NOT NULL,
+    playerName VARCHAR(200) NOT NULL,
+    message VARCHAR(2000) NOT NULL,
+    sendDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    isSuccess INT DEFAULT 1,
+    isApproved INT DEFAULT 0,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE,
+    FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE
+);
 

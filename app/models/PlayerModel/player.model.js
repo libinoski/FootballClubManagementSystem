@@ -330,8 +330,46 @@ Player.viewAllNotifications = async (playerId) => {
 //
 //
 //
-//
+// PLAYER SEND LEAVE REQUEST TO CLUB
+Player.sendLeaveRequestToClub = async (clubId, playerId, message) => {
+    try {
+        // Check if the club exists and is active
+        const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+        const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
+        if (clubCheckResult.length === 0) {
+            throw new Error("Club not found");
+        }
 
+        // Fetch player name from the Players table
+        const fetchPlayerNameQuery = "SELECT playerName FROM Players WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0";
+        const playerNameResult = await dbQuery(fetchPlayerNameQuery, [playerId]);
+        if (playerNameResult.length === 0) {
+            throw new Error("Player not found or not active");
+        }
+        const playerName = playerNameResult[0].playerName;
+
+        // Insert the leave request into the database
+        const insertLeaveRequestQuery = "INSERT INTO Leave_Request_To_Club (clubId, playerId, playerName, message) VALUES (?, ?, ?, ?)";
+        const result = await dbQuery(insertLeaveRequestQuery, [clubId, playerId, playerName, message]);
+
+        // Retrieve the inserted leave request ID
+        const leaveRequestId = result.insertId;
+
+        // Construct the leave request details object
+        const leaveRequestDetails = {
+            leaveRequestId: leaveRequestId,
+            clubId: clubId,
+            playerId: playerId,
+            playerName: playerName,
+            message: message,
+        };
+
+        return leaveRequestDetails;
+    } catch (error) {
+        console.error("Error sending leave request to club:", error);
+        throw error;
+    }
+};
 
 
 

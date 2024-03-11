@@ -21,6 +21,7 @@ router.post("/clubUnSuspendOnePlayer", ClubController.unSuspendOnePlayer);
 router.post("/clubViewAllSuspendedPlayers", ClubController.viewAllSuspendedPlayers);
 router.post("/clubViewOneSuspendedPlayer", ClubController.viewOneSuspendedPlayer);
 router.post("/clubSendNotificationToPlayer", ClubController.sendNotificationToPlayer);
+router.post("/clubAddOneInjuryUpdate", ClubController.addOneInjuryUpdate);
 
 
 

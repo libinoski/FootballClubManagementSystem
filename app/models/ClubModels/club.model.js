@@ -590,7 +590,7 @@ Club.viewOneSuspendedPlayer = async (playerId, clubId) => {
 //
 //
 // CLUB SEND NOTIFICATION TO PLAYER
-Club.sendNotificationToPlayer = async (clubId, playerId, notificationMessage) => {
+Club.sendNotificationToPlayer = async (clubId, playerId, message) => {
     try {
       // Check if the club exists and is active
       const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
@@ -608,7 +608,7 @@ Club.sendNotificationToPlayer = async (clubId, playerId, notificationMessage) =>
   
       // Insert the notification into the database
       const insertNotificationQuery = "INSERT INTO Notification_To_Players (clubId, playerId, message) VALUES (?, ?, ?)";
-      const result = await dbQuery(insertNotificationQuery, [clubId, playerId, notificationMessage]);
+      const result = await dbQuery(insertNotificationQuery, [clubId, playerId, message]);
   
       // Retrieve the inserted notification ID
       const notificationId = result.insertId;
@@ -618,7 +618,7 @@ Club.sendNotificationToPlayer = async (clubId, playerId, notificationMessage) =>
         notificationId: notificationId,
         clubId: clubId,
         playerId: playerId,
-        message: notificationMessage,
+        message: message,
       };
   
       return notificationDetails;
@@ -633,45 +633,56 @@ Club.sendNotificationToPlayer = async (clubId, playerId, notificationMessage) =>
 //
 //
 // CLUB ADD ONE INJURY UPDATE
-
-Club.addOneInjuryUpdate= async function (clubId, playerId,injuryData) {
+Club.addOneInjuryUpdate = async (playerId, clubId, injuryData) => {
     try {
-        // Validate club
-        const clubExistsQuery = "SELECT clubId, clubName FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
-        const clubResult = await dbQuery(clubExistsQuery, [clubId]);
-        if (clubResult.length === 0) throw new Error("Club not found");
-        const clubName = clubResult[0].clubName;
+        // Check if the club exists and is active
+        const clubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1";
+        const [clubResult] = await db.query(clubQuery, [clubId]);
+        
+        if (clubResult.length === 0) {
+            throw new Error('Club not found');
+        }
 
-        // Fetch hospitalId associated with the playerId
-        const playerExistsQuery = "SELECT hospitalId, playerName, playerProfileImage FROM Players WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0";
-        const playerResult = await dbQuery(playerExistsQuery, [playerId]);
-        if (playerResult.length === 0) throw new Error("Patient not found");
-        const hospitalId = playerResult[0].hospitalId;
-        const playerName = playerResult[0].playerName;
-        const playerProfileImage = playerResult[0].playerProfileImage;
+        // Check if the player exists and is associated with the specified club
+        const playerQuery = "SELECT * FROM Players WHERE playerId = ? AND clubId = ?";
+        const [playerResult] = await db.query(playerQuery, [playerId, clubId]);
+        
+        if (playerResult.length === 0) {
+            throw new Error('Player not found or not associated with the specified club');
+        }
 
-        // Insert review
-        const insertReviewQuery = "INSERT INTO Reviews (clubId, playerId, reviewContent, hospitalId, sendDate, isActive, deleteStatus, playerName, playerProfileImage, clubName) VALUES (?, ?, ?, ?, NOW(), 1, 0, ?, ?, ?)";
-        const insertResult = await dbQuery(insertReviewQuery, [clubId, playerId, reviewContent, hospitalId, playerName, playerProfileImage, clubName]);
-        const reviewId = insertResult.insertId;
+        // Insert injury data into the database
+        const insertInjuryQuery = `
+            INSERT INTO Injuries
+            (playerId, clubId, playerName, playerImage, clubName, injuryType, averageRecoveryTime)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        const insertInjuryValues = [
+            playerId,
+            clubId,
+            playerResult[0].playerName,
+            playerResult[0].playerImage,
+            clubResult[0].clubName,
+            injuryData.injuryType,
+            injuryData.averageRecoveryTime
+        ];
 
-        // Return the relevant review details
+        await db.query(insertInjuryQuery, insertInjuryValues);
+
+        // Return the inserted injury data along with playerId and clubId
         return {
-            reviewId: reviewId,
-            playerId: playerId,
-            clubId: clubId,
-            reviewContent: reviewContent,
-            hospitalId: hospitalId,
-            playerName: playerName,
-            playerProfileImage: playerProfileImage,
-            clubName: clubName,
-            sendDate: new Date().toISOString(),
+            playerId,
+            clubId,
+            ...injuryData
         };
     } catch (error) {
-        console.error("Error submitting review by player:", error);
+        console.error('Error in addOneInjuryUpdate:', error);
         throw error;
     }
 };
+
+
+
   
   
 

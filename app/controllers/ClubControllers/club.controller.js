@@ -1754,7 +1754,7 @@ exports.viewOneSuspendedPlayer = async (req, res) => {
 exports.sendNotificationToPlayer = async (req, res) => {
     try {
       const token = req.headers.token;
-      const { clubId, playerId, notificationMessage } = req.body;
+      const { clubId, playerId, message } = req.body;
   
       // Check if token is provided
       if (!token) {
@@ -1764,7 +1764,7 @@ exports.sendNotificationToPlayer = async (req, res) => {
         });
       }
   
-      // Check if clubId, playerId, and notificationMessage are provided
+      // Check if clubId, playerId, and message are provided
       if (!clubId) {
         return res.status(401).json({
           status: "error",
@@ -1808,24 +1808,24 @@ exports.sendNotificationToPlayer = async (req, res) => {
         }
   
         // Function to validate notification message
-        function validateNotificationData(notificationMessage) {
+        function validateNotificationData(message) {
           const validationResults = {
             isValid: true,
             errors: {},
           };
   
           // Your validation logic here
-          const messageValidation = dataValidator.isValidMessage(notificationMessage);
+          const messageValidation = dataValidator.isValidMessage(message);
           if (!messageValidation.isValid) {
             validationResults.isValid = false;
-            validationResults.errors["notificationMessage"] = [messageValidation.message];
+            validationResults.errors["message"] = [messageValidation.message];
           }
   
           return validationResults;
         }
   
         // Validate notification message
-        const validationResults = validateNotificationData(notificationMessage);
+        const validationResults = validateNotificationData(message);
   
         // If validation fails, return error response
         if (!validationResults.isValid) {
@@ -1838,7 +1838,7 @@ exports.sendNotificationToPlayer = async (req, res) => {
   
         try {
           // Send notification to player
-          const notificationDetails = await Club.sendNotificationToPlayer(clubId, playerId, notificationMessage);
+          const notificationDetails = await Club.sendNotificationToPlayer(clubId, playerId, message);
   
           // Return success response
           return res.status(200).json({
@@ -1982,7 +1982,7 @@ exports.addOneInjuryUpdate = async (req, res) => {
 
             try {
                 // Call the addInjuryUpdate method from the Club model
-                const injuryDetails = await Club.addInjuryUpdate(playerId, clubId, injuryData); // Pass injuryData to the Club model method
+                const injuryDetails = await Club.addOneInjuryUpdate(playerId, clubId, injuryData); // Pass injuryData to the Club model method
 
                 // Return success response
                 return res.status(200).json({
@@ -1995,7 +1995,7 @@ exports.addOneInjuryUpdate = async (req, res) => {
                 console.error("Error submitting injury details by club:", error);
 
                 // Return appropriate error response
-                if (error.message === "Club not found" || error.message === "Player not found or not active in this club") {
+                if (error.message === "Club not foundd" || error.message === "Player not found or not associated with the specified club") {
                     return res.status(422).json({
                         status: "error",
                         error: error.message

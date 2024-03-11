@@ -807,3 +807,133 @@ exports.viewAllNotifications = async (req, res) => {
       });
     }
   };
+//
+//
+//
+//
+//
+//
+exports.sendLeaveRequestToClub = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { clubId, playerId, message } = req.body;
+
+        // Check if token is provided
+        if (!token) {
+            return res.status(403).json({
+                status: "error",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if clubId, playerId, and message are provided
+        if (!clubId) {
+            return res.status(401).json({
+                status: "error",
+                message: "Club ID is missing"
+            });
+        }
+        if (!playerId) {
+            return res.status(401).json({
+                status: "error",
+                message: "Player ID is missing"
+            });
+        }
+
+        // Token verification
+        jwt.verify(token, process.env.JWT_SECRET_KEY_CLUB, async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Invalid or missing token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Token has expired"
+                    });
+                } else {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Unauthorized access"
+                    });
+                }
+            }
+
+            // Check if the decoded clubId matches the provided clubId
+            if (decoded.playerId != playerId) {
+                return res.status(403).json({
+                    status: "error",
+                    message: "Unauthorized access"
+                });
+            }
+
+            // Function to validate leave message
+            function validateLeaveData(message) {
+                const validationResults = {
+                    isValid: true,
+                    errors: {},
+                };
+
+                // Your validation logic here
+                const messageValidation = dataValidator.isValidMessage(message);
+                if (!messageValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["message"] = [messageValidation.message];
+                }
+
+                return validationResults;
+            }
+
+            // Validate leave message
+            const validationResults = validateLeaveData(message);
+
+            // If validation fails, return error response
+            if (!validationResults.isValid) {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Validation failed",
+                    errors: validationResults.errors
+                });
+            }
+
+            try {
+                // Send leave request to club
+                const leaveRequestDetails = await Player.sendLeaveRequestToClub(clubId, playerId, message);
+
+                // Return success response
+                return res.status(200).json({
+                    status: "success",
+                    message: "Leave request sent successfully",
+                    data: leaveRequestDetails
+                });
+            } catch (error) {
+                // Handle errors
+                console.error("Error sending leave request to club:", error);
+
+                // Return appropriate error response
+                if (error.message === "Club not found" || error.message === "Player not found or not active") {
+                    return res.status(422).json({
+                        status: "error",
+                        error: error.message
+                    });
+                }
+
+                return res.status(500).json({
+                    status: "error",
+                    message: "Internal server error",
+                    error: error.message
+                });
+            }
+        });
+    } catch (error) {
+        // Handle unexpected errors
+        console.error("Error in sendLeaveRequestToClub controller:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
