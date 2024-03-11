@@ -2320,8 +2320,292 @@ exports.approveOneLeaveRequest = async (req, res) => {
 //
 //
 //
+// CLUB VIEW ALL MATCH
+exports.viewAllMatches = async (req, res) => {
+    const token = req.headers.token;
+    const { clubId } = req.body;
+  
+    // Check if token is missing
+    if (!token) {
+      return res.status(403).json({
+        status: "failed",
+        message: "Token is missing"
+      });
+    }
+  
+    // Check if clubId is missing
+    if (!clubId) {
+      return res.status(401).json({
+        status: "failed",
+        message: "clubId is missing"
+      });
+    }
+  
+    try {
+      // Verifying the token
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY_CLUB,
+        async (err, decoded) => {
+          if (err) {
+            if (err.name === "JsonWebTokenError") {
+              return res.status(403).json({
+                status: "failed",
+                message: "Invalid token"
+              });
+            } else if (err.name === "TokenExpiredError") {
+              return res.status(403).json({
+                status: "failed",
+                message: "Token has expired"
+              });
+            } else {
+              return res.status(403).json({
+                status: "failed",
+                message: "Unauthorized access"
+              });
+            }
+          }
+  
+          // Check if decoded token matches clubId from request body
+          if (decoded.clubId != clubId) {
+            return res.status(403).json({
+              status: "failed",
+              message: "Unauthorized access"
+            });
+          }
+  
+          // Token is valid, proceed to fetch all admin matches
+          try {
+            const allMatches = await Club.viewAllMatches(clubId);
+            return res.status(200).json({
+              status: "success",
+              message: "All Admin Matches retrieved successfully",
+              data: allMatches,
+            });
+          } catch (error) {
+            console.error("Error viewing all matches:", error);
+            if (error.message === "Club not found") {
+              return res.status(422).json({
+                status: "error",
+                error: error.message
+              });
+            }
+            return res.status(500).json({
+              status: "error",
+              message: "Internal server error",
+              error: error.message,
+            });
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error verifying token:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  };
+//
+//
+//
+//
+//
+// CLUB VIEW ONE MATCH
+exports.viewOneMatch = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { clubId, matchId } = req.body;
 
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
 
+        // Check if clubId is missing
+        if (!clubId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Club ID is missing"
+            });
+        }
+
+        // Check if matchId is missing
+        if (!matchId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Match ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_CLUB,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches clubId from request body
+                if (decoded.clubId != clubId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch details of one club match
+                try {
+                    const matchDetails = await Club.viewOneMatch(
+                        matchId,
+                        clubId
+                    );
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Club Match details",
+                        data: matchDetails,
+                    });
+                } catch (error) {
+                    if (
+                        error.message === "Match not found" ||
+                        error.message === "Club not found"
+                    ) {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        console.error("Error viewing club match details:", error);
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+//
+// CLUB VIEW ALL MATCH POINTS
+exports.viewAllMatchPoints = async (req, res) => {
+    const token = req.headers.token;
+    const { clubId } = req.body;
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    // Check if clubId is missing
+    if (!clubId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Club ID is missing"
+        });
+    }
+
+    try {
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_CLUB,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches clubId from request body
+                if (decoded.clubId != clubId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch all match points for the club
+                try {
+                    const allMatchPoints = await Club.viewAllMatchPoints(clubId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "All Club Match Points retrieved successfully",
+                        data: allMatchPoints,
+                    });
+                } catch (error) {
+                    console.error("Error viewing all match points:", error);
+                    if (error.message === "Club not found") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
 
 
 

@@ -807,5 +807,94 @@ Club.approveOneLeaveRequest = async (leaveRequestId, clubId) => {
 //
 //
 //
+// CLUB VIEW ALL MATCHES
+Club.viewAllMatches = async (clubId) => {
+    try {
+    // Check if clubId exists
+    const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND deleteStatus = 0 AND isSuspended = 0";
+    const clubExistsResult = await db.query(clubExistsQuery, [clubId]);
+
+    if (clubExistsResult[0].count === 0) {
+      throw new Error("Club not found");
+    }
+        const query = "SELECT * FROM Matches WHRE endStatus = 0 AND deleteStatus = 0";
+        const matches = await db.query(query);
+        return matches;
+    } catch (error) {
+        console.error("Error viewing all matches:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+//
+// CLUB VIEW ONE MATCH
+Club.viewOneMatch = async (clubId,matchId) => {
+    try {
+
+    // Check if clubId exists
+    const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND deleteStatus = 0 AND isSuspended = 0";
+    const clubExistsResult = await db.query(clubExistsQuery, [clubId]);
+
+    if (clubExistsResult[0].count === 0) {
+      throw new Error("Club not found");
+    }
+
+        // Query to fetch the match details based on matchId
+        const query = "SELECT * FROM Matches WHERE matchId = ? AND deleteStatus = 0";
+        
+        // Execute the query
+        const match = await dbQuery(query, [matchId]);
+
+        // Check if match is found
+        if (match.length === 0) {
+            throw new Error("Match not found");
+        }
+
+        // Return the match details
+        return match[0];
+    } catch (error) {
+        console.error("Error viewing one match:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+// CLUB VIEW ALL MATCH POINTS
+Club.viewAllMatchPoints = async (clubId) => {
+    try {
+      // Check if the club exists
+      const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND deleteStatus = 0 AND isActive = 1";
+      const clubExistsResult = await dbQuery(clubExistsQuery, [clubId]);
+  
+      if (clubExistsResult.length === 0) {
+        throw new Error("Club not found");
+      }
+  
+      // Query to fetch all match points, ordered by addedDate
+      const query = `
+        SELECT pointId, teamOneName, teamTwoName, teamOneImage, teamTwoImage,
+               teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch, addedDate
+        FROM Points
+        ORDER BY addedDate DESC
+      `;
+      
+      // Execute the query
+      const matchPoints = await dbQuery(query);
+  
+      // Return the match points
+      return matchPoints;
+    } catch (error) {
+      console.error("Error viewing all match points:", error);
+      throw error;
+    }
+  };
+  
+
+
 
 module.exports = { Club };

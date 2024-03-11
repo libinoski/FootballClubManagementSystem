@@ -227,7 +227,7 @@ Admin.updateProfile = async (updatedAdmin) => {
 //
 //
 //
-// 
+// ADMIN ADD NEWS
 Admin.addNews = async (adminId, newFootballNews) => {
   try {
     const checkAdminQuery =
@@ -252,7 +252,208 @@ Admin.addNews = async (adminId, newFootballNews) => {
 //
 //
 //
-// 
+// ADMIN ADD MATCH
+Admin.addMatch = async (adminId, matchData) => {
+  try {
+      // Check if the admin exists
+      const checkAdminQuery = "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
+      const [adminReslut] = await db.query(checkAdminQuery, [adminId]);
+
+      if (adminReslut.length === 0) {
+          throw new Error("Admin not found");
+      }
+
+      // Insert match data into the database
+      const insertQuery = `
+          INSERT INTO Matches (adminId, matchName, homeTeamName, awayTeamName, homeTeamImage, awayTeamImage, matchLocation, matchPrize, matchDate)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      const values = [
+          adminId,
+          matchData.matchName,
+          matchData.homeTeamName,
+          matchData.awayTeamName,
+          matchData.homeTeamImage,
+          matchData.awayTeamImage,
+          matchData.matchLocation,
+          matchData.matchPrize,
+          matchData.matchDate
+      ];
+      const [insertMatchData] = await db.query(insertQuery, values);
+
+      // Return the ID of the added match
+      return insertMatchData.insertId;
+  } catch (error) {
+      console.error("Error adding match:", error);
+      throw error;
+  }
+};
+//
+//
+//
+//
+// ADMIN VIEW ALL MATCHES
+Admin.viewAllMatches = async (adminId) => {
+  try {
+    // Check if adminId exists
+    const adminExistsQuery = "SELECT * FROM Admins WHERE adminId = ? AND deleteStatus = 0";
+    const adminExistsResult = await db.query(adminExistsQuery, [adminId]);
+
+    if (adminExistsResult[0].count === 0) {
+      throw new Error("Admin not found");
+    }
+
+    // Proceed to fetch matches
+    const query = "SELECT * FROM Matches WHERE endStatus = 0 AND deleteStatus = 0";
+    const matches = await db.query(query);
+    return matches;
+  } catch (error) {
+    console.error("Error viewing all matches:", error);
+    throw error;
+  }
+};
+//
+//
+//
+//
+// ADMIN VIEW ONE MATCH
+Admin.viewOneMatch = async (adminId, matchId) => {
+  try {
+    // Check if adminId exists
+    const adminExistsQuery = "SELECT * FROM Admins WHERE adminId = ? AND deleteStatus = 0";
+    const adminExistsResult = await db.query(adminExistsQuery, [adminId]);
+
+    if (adminExistsResult[0].count === 0) {
+      throw new Error("Admin not found");
+    }
+
+    // Query to fetch the match details based on matchId
+    const query = "SELECT * FROM Matches WHERE matchId = ? AND deleteStatus = 0";
+    
+    // Execute the query
+    const match = await db.query(query, [matchId]);
+
+    // Check if match is found
+    if (match.length === 0) {
+      throw new Error("Match not found");
+    }
+
+    // Return the match details
+    return match[0];
+  } catch (error) {
+    console.error("Error viewing one match:", error);
+    throw error;
+  }
+};
+//
+//
+//
+//
+// ADMIN END MATCH
+Admin.endOneMatch = async (adminId, matchId) => {
+  try {
+    // Check if the admin exists
+    const checkAdminQuery =
+      "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
+    const [adminResult] = await db.query(checkAdminQuery, [adminId]);
+
+    if (adminResult.length === 0) {
+      throw new Error("Admin not found");
+    }
+
+    // Update endStatus field of the match
+    const updateQuery = `
+      UPDATE Matches
+      SET endStatus = 1
+      WHERE matchId = ? AND deleteStatus = 0
+    `;
+    await db.query(updateQuery, [matchId]);
+
+    console.log("Match ended successfully for matchId:", matchId);
+    return { message: "Match ended successfully" };
+  } catch (error) {
+    console.error("Error ending match:", error);
+    throw error;
+  }
+};
+//
+//
+//
+//
+// ADMIN ADD MATCH POINT
+Admin.addMatchPoint = async (adminId, matchData) => {
+  try {
+      // Check if the admin exists
+      const checkAdminQuery = "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
+      const [adminResult] = await db.query(checkAdminQuery, [adminId]);
+
+      if (adminResult.length === 0) {
+          throw new Error("Admin not found");
+      }
+
+      // Insert match data into the database
+      const insertQuery = `
+          INSERT INTO Points (adminId, teamOneName, teamTwoName, teamOneImage, teamTwoImage, teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+      const values = [
+          adminId,
+          matchData.teamOneName,
+          matchData.teamTwoName,
+          matchData.teamOneImage,
+          matchData.teamTwoImage,
+          matchData.teamOneTotalGoalsInTheMatch,
+          matchData.teamTwoTotalGoalsInTheMatch
+      ];
+      const [insertMatchData] = await db.query(insertQuery, values);
+
+      // Return the ID of the added match
+      return insertMatchData.insertId;
+  } catch (error) {
+      console.error("Error adding match:", error);
+      throw error;
+  }
+};
+//
+//
+//
+//
+// ADMIN VIEW ALL MATCH POINTS
+Admin.viewAllMatchPoints = async (adminId) => {
+  try {
+    // Check if the admin exists
+    const adminExistsQuery = "SELECT * FROM Admins WHERE adminId = ? AND deleteStatus = 0 AND isActive = 1";
+    const adminExistsResult = await dbQuery(adminExistsQuery, [adminId]);
+
+    if (adminExistsResult.length === 0) {
+      throw new Error("Admin not found");
+    }
+
+    // Query to fetch all match points, ordered by addedDate
+    const query = `
+      SELECT pointId, teamOneName, teamTwoName, teamOneImage, teamTwoImage,
+             teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch, addedDate
+      FROM Points
+      ORDER BY addedDate DESC
+    `;
+    
+    // Execute the query
+    const matchPoints = await dbQuery(query);
+
+    // Return the match points
+    return matchPoints;
+  } catch (error) {
+    console.error("Error viewing all match points:", error);
+    throw error;
+  }
+};
+
+
+
+
+
+
+
 
 
 

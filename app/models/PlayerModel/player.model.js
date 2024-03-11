@@ -204,20 +204,20 @@ Player.changePassword = async (playerId, oldPassword, newPassword) => {
 //
 // PLAYER VIEW PROFILE
 Player.viewProfile = async (playerId) => {
-  const query =
-  "SELECT playerId, clubId, clubName, playerName, playerImage, playerAge, playerEmail, playerMobile, playerCountry, playerPosition, playerAddress, managerName, registeredDate FROM Players WHERE playerId = ? AND isActive = 1";
+    const query =
+        "SELECT playerId, clubId, clubName, playerName, playerImage, playerAge, playerEmail, playerMobile, playerCountry, playerPosition, playerAddress, managerName, registeredDate FROM Players WHERE playerId = ? AND isActive = 1";
 
-try {
-  const result = await dbQuery(query, [playerId]);
+    try {
+        const result = await dbQuery(query, [playerId]);
 
-  if (result.length === 0) {
-    throw new Error("Player not found");
-  }
+        if (result.length === 0) {
+            throw new Error("Player not found");
+        }
 
-  return result[0];
-} catch (error) {
-  throw error;
-}
+        return result[0];
+    } catch (error) {
+        throw error;
+    }
 };
 //
 //
@@ -445,10 +445,97 @@ Player.viewAllApprovedLeaveRequests = async (playerId) => {
         throw error;
     }
 };
+//
+//
+//
+//
+// PLAYER VIEW ALL MATCHES
+Player.viewAllMatches = async (playerId) => {
+    try {
+        // Check if playerId exists
+        const playerExistsQuery = "SELECT * FROM Players WHERE playerId = ? AND deleteStatus = 0 AND isSuspended = 0";
+        const playerExistsResult = await db.query(playerExistsQuery, [playerId]);
+
+        if (playerExistsResult[0].count === 0) {
+            throw new Error("Player not found");
+        }
+        const query = "SELECT * FROM Matches WHRE endStatus = 0 AND deleteStatus = 0";
+        const matches = await db.query(query);
+        return matches;
+    } catch (error) {
+        console.error("Error viewing all matches:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+// PLAYER VIEW ONE MATCH 
+Player.viewOneMatch = async (matchId, playerId) => {
+    try {
+
+        // Check if playerId exists
+        const playerExistsQuery = "SELECT * FROM Players WHERE playerId = ? AND deleteStatus = 0 AND isSuspended = 0";
+        const playerExistsResult = await db.query(playerExistsQuery, [playerId]);
+
+        if (playerExistsResult[0].count === 0) {
+            throw new Error("Player not found");
+        }
+
+        // Query to fetch the match details based on matchId
+        const query = "SELECT * FROM Matches WHERE matchId = ? AND deleteStatus = 0";
+
+        // Execute the query
+        const match = await dbQuery(query, [matchId]);
+
+        // Check if match is found
+        if (match.length === 0) {
+            throw new Error("Match not found");
+        }
+
+        // Return the match details
+        return match[0];
+    } catch (error) {
+        console.error("Error viewing one match:", error);
+        throw error;
+    }
+};
+//
+//
+//
+//
+// PLAYER VIEW ALL MATCH POINTS
+Player.viewAllMatchPoints = async (playerId) => {
+    try {
+      // Check if the player exists
+      const playerExistsQuery = "SELECT * FROM Players WHERE playerId = ? AND deleteStatus = 0 AND isActive = 1";
+      const playerExistsResult = await dbQuery(playerExistsQuery, [playerId]);
+  
+      if (playerExistsResult.length === 0) {
+        throw new Error("Player not found");
+      }
+  
+      // Query to fetch all match points, ordered by addedDate
+      const query = `
+        SELECT pointId, teamOneName, teamTwoName, teamOneImage, teamTwoImage,
+               teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch, addedDate
+        FROM Points
+        ORDER BY addedDate DESC
+      `;
+      
+      // Execute the query
+      const matchPoints = await dbQuery(query);
+  
+      // Return the match points
+      return matchPoints;
+    } catch (error) {
+      console.error("Error viewing all match points:", error);
+      throw error;
+    }
+  };
+  
 
 
 
-
-
-
-module.exports = { Player,Club };
+module.exports = { Player, Club };

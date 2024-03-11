@@ -1137,3 +1137,292 @@ exports.viewAllApprovedLeaveRequests = async (req, res) => {
         });
     }
 };
+//
+//
+//
+//
+//
+// PLAYER VIEW ALL MATCH
+exports.viewAllMatches = async (req, res) => {
+    const token = req.headers.token;
+    const { playerId } = req.body;
+  
+    // Check if token is missing
+    if (!token) {
+      return res.status(403).json({
+        status: "failed",
+        message: "Token is missing"
+      });
+    }
+  
+    // Check if playerId is missing
+    if (!playerId) {
+      return res.status(401).json({
+        status: "failed",
+        message: "playerId is missing"
+      });
+    }
+  
+    try {
+      // Verifying the token
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY_PLAYER,
+        async (err, decoded) => {
+          if (err) {
+            if (err.name === "JsonWebTokenError") {
+              return res.status(403).json({
+                status: "failed",
+                message: "Invalid token"
+              });
+            } else if (err.name === "TokenExpiredError") {
+              return res.status(403).json({
+                status: "failed",
+                message: "Token has expired"
+              });
+            } else {
+              return res.status(403).json({
+                status: "failed",
+                message: "Unauthorized access"
+              });
+            }
+          }
+  
+          // Check if decoded token matches playerId from request body
+          if (decoded.playerId != playerId) {
+            return res.status(403).json({
+              status: "failed",
+              message: "Unauthorized access"
+            });
+          }
+  
+          // Token is valid, proceed to fetch all admin matches
+          try {
+            const allMatches = await Player.viewAllMatches(playerId);
+            return res.status(200).json({
+              status: "success",
+              message: "All Admin Matches retrieved successfully",
+              data: allMatches,
+            });
+          } catch (error) {
+            console.error("Error viewing all matches:", error);
+            if (error.message === "Player not found") {
+              return res.status(422).json({
+                status: "error",
+                error: error.message
+              });
+            }
+            return res.status(500).json({
+              status: "error",
+              message: "Internal server error",
+              error: error.message,
+            });
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error verifying token:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  };
+//
+//
+//
+//
+// PLAYER VIEW ONE MATCH
+exports.viewOneMatch = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { playerId, matchId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if playerId is missing
+        if (!playerId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Player ID is missing"
+            });
+        }
+
+        // Check if matchId is missing
+        if (!matchId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Match ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_PLAYER,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches playerId from request body
+                if (decoded.playerId != playerId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch details of one player match
+                try {
+                    const matchDetails = await Player.viewOneMatch(
+                        matchId,
+                        playerId
+                    );
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Player Match details",
+                        data: matchDetails,
+                    });
+                } catch (error) {
+                    if (
+                        error.message === "Match not found" ||
+                        error.message === "Player not found"
+                    ) {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        console.error("Error viewing player match details:", error);
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+// PLAYER VIEW ALL MATCH POINTS
+exports.viewAllMatchPoints = async (req, res) => {
+    const token = req.headers.token;
+    const { playerId } = req.body;
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    // Check if playerId is missing
+    if (!playerId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Player ID is missing"
+        });
+    }
+
+    try {
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_PLAYER,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches playerId from request body
+                if (decoded.playerId != playerId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch all match points for the player
+                try {
+                    const allMatchPoints = await Player.viewAllMatchPoints(playerId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "All Player Match Points retrieved successfully",
+                        data: allMatchPoints,
+                    });
+                } catch (error) {
+                    console.error("Error viewing all match points:", error);
+                    if (error.message === "Player not found") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};

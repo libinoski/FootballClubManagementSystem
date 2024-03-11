@@ -25,6 +25,9 @@ router.post("/clubAddOneInjuryUpdate", ClubController.addOneInjuryUpdate);
 router.post("/clubViewAllLeaveRequests", ClubController.viewAllLeaveRequests);
 router.post("/clubViewOneLeaveRequest", ClubController.viewOneLeaveRequest);
 router.post("/clubApproveOneLeaveRequest", ClubController.approveOneLeaveRequest);
+router.post("/clubViewAllMatches", ClubController.viewAllMatches);
+router.post("/clubViewOneMatch", ClubController.viewOneMatch);
+router.post("/clubViewAllMatchPoints", ClubController.viewAllMatchPoints);
 
 
 

@@ -11,6 +11,12 @@ router.post("/adminChangePassword", AdminController.changePassword);
 router.post("/adminViewProfile", AdminController.viewProfile);
 router.post("/adminUpdateProfile", AdminController.updateProfile);
 router.post("/adminAddNews", AdminController.addNews);
+router.post("/adminAddMatch", AdminController.addMatch);
+router.post("/adminViewAllMatches", AdminController.viewAllMatches);
+router.post("/adminViewOneMatch", AdminController.viewOneMatch);
+router.post("/adminEndOneMatch", AdminController.endOneMatch);
+router.post("/adminAddMatchPoint", AdminController.addMatchPoint);
+router.post("/adminViewAllMatchPoints", AdminController.viewAllMatchPoints);
 
 
 

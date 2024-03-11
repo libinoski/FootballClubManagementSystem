@@ -634,7 +634,6 @@ exports.updateProfile = async (req, res) => {
 //
 //
 //
-//
 // ADMIN ADD NEWS
 exports.addNews = async (req, res) => {
     const token = req.headers.token;
@@ -694,7 +693,7 @@ exports.addNews = async (req, res) => {
                         });
                     }
 
-                    if (decoded.adminId !== adminId) {
+                    if (decoded.adminId != adminId) {
                         console.error("Unauthorized access");
                         return res.status(403).json({
                             status: "error",
@@ -833,9 +832,889 @@ exports.addNews = async (req, res) => {
 //
 //
 //
+// ADMIN ADD MATCH
+exports.addMatch = async (req, res) => {
+    const token = req.headers.token;
+
+    try {
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        jwt.verify(token, process.env.JWT_SECRET_KEY_ADMIN, async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Token has expired"
+                    });
+                } else {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+            }
+
+            const uploadMatchImages = multer({
+                storage: multer.memoryStorage(),
+            }).fields([
+                { name: 'homeTeamImage', maxCount: 1 },
+                { name: 'awayTeamImage', maxCount: 1 }
+            ]);
+
+            uploadMatchImages(req, res, async function (err) {
+                if (err) {
+                    console.error("File upload failed:", err);
+                    return res.status(400).json({
+                        status: "error",
+                        message: "File upload failed",
+                        results: err.message,
+                    });
+                }
+
+                const { adminId, matchName, homeTeamName, awayTeamName, matchLocation, matchPrize, matchDate } = req.body;
+
+                if (!adminId) {
+                    return res.status(401).json({
+                        status: "failed",
+                        message: "adminId is missing"
+                    });
+                }
+
+                if (decoded.adminId != adminId) {
+                    console.error("Unauthorized access");
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                const homeTeamImageFile = req.files['homeTeamImage'] ? req.files['homeTeamImage'][0] : null;
+                const awayTeamImageFile = req.files['awayTeamImage'] ? req.files['awayTeamImage'][0] : null;
+
+                const validationResults = validateMatchData(req.body, homeTeamImageFile, awayTeamImageFile);
+
+                if (!validationResults.isValid) {
+                    console.error("Validation failed:", validationResults.errors);
+                    return res.status(400).json({
+                        status: "error",
+                        message: "Validation failed",
+                        results: validationResults.errors,
+                    });
+                }
+
+                try {
+                    const homeTeamImageUrl = await uploadFileToS3(
+                        homeTeamImageFile.buffer,
+                        homeTeamImageFile.originalname,
+                        homeTeamImageFile.mimetype
+                    );
+
+                    const awayTeamImageUrl = await uploadFileToS3(
+                        awayTeamImageFile.buffer,
+                        awayTeamImageFile.originalname,
+                        awayTeamImageFile.mimetype
+                    );
+
+                    const matchData = {
+                        matchName,
+                        homeTeamName,
+                        awayTeamName,
+                        homeTeamImage: homeTeamImageUrl,
+                        awayTeamImage: awayTeamImageUrl,
+                        matchLocation,
+                        matchPrize,
+                        matchDate
+                    };
+
+                    const addedMatchId = await Admin.addMatch(adminId, matchData);
+
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Match added successfully",
+                        data: {
+                            matchId: addedMatchId,
+                            ...matchData
+                        }
+                    });
+                } catch (error) {
+                    console.error("Error during adding match:", error);
+                    return res.status(422).json({
+                        status: "error",
+                        error: error.message
+                    });
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Error during adding match:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+
+    async function uploadFileToS3(fileBuffer, fileName, mimeType, deleteOnError = false) {
+        try {
+            const uploadParams = {
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: `matchImages/${fileName}`,
+                Body: fileBuffer,
+                ACL: "public-read",
+                ContentType: mimeType,
+            };
+            const command = new PutObjectCommand(uploadParams);
+            await s3Client.send(command);
+            return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
+        } catch (error) {
+            console.error("Error uploading file to S3:", error);
+            if (deleteOnError) {
+                const s3Key = fileName.split('/').pop();
+                const params = {
+                    Bucket: process.env.S3_BUCKET_NAME,
+                    Key: `matchImages/${s3Key}`
+                };
+                try {
+                    await s3Client.send(new DeleteObjectCommand(params));
+                } catch (s3Error) {
+                    console.error("Error deleting file from S3:", s3Error);
+                }
+            }
+            throw error;
+        }
+    }
+
+    function validateMatchData(matchData, homeTeamImageFile, awayTeamImageFile) {
+        const validationResults = {
+            isValid: true,
+            errors: {},
+        };
+
+        const matchNameValidation = dataValidator.isValidText(
+            matchData.matchName
+        );
+        if (!matchNameValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["matchName"] =
+                matchNameValidation.message;
+        }
+
+        const homeTeamNameValidation = dataValidator.isValidText(
+            matchData.homeTeamName
+        );
+        if (!homeTeamNameValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["homeTeamName"] =
+                homeTeamNameValidation.message;
+        }
+
+        const awayTeamNameValidation = dataValidator.isValidText(
+            matchData.awayTeamName
+        );
+        if (!awayTeamNameValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["awayTeamName"] =
+                awayTeamNameValidation.message;
+        }
+
+        if (!homeTeamImageFile) {
+            validationResults.isValid = false;
+            validationResults.errors["homeTeamImage"] =
+                "home team image is required";
+        } else {
+            const imageValidation =
+                dataValidator.isValidImageWith1MBConstraint(homeTeamImageFile);
+            if (!imageValidation.isValid) {
+                validationResults.isValid = false;
+                validationResults.errors["homeTeamImage"] =
+                    imageValidation.message;
+            }
+        }
+
+        if (!awayTeamImageFile) {
+            validationResults.isValid = false;
+            validationResults.errors["awayTeamImage"] =
+                "away team image is required";
+        } else {
+            const imageValidation =
+                dataValidator.isValidImageWith1MBConstraint(awayTeamImageFile);
+            if (!imageValidation.isValid) {
+                validationResults.isValid = false;
+                validationResults.errors["awayTeamImage"] =
+                    imageValidation.message;
+            }
+        }
+
+        const matchLocationValidation = dataValidator.isValidText(
+            matchData.matchLocation
+        );
+        if (!matchLocationValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["matchLocation"] =
+                matchLocationValidation.message;
+        }
+
+        const matchPrizeValidation = dataValidator.isValidText(
+            matchData.matchPrize
+        );
+        if (!matchPrizeValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["matchPrize"] =
+                matchPrizeValidation.message;
+        }
+
+        const matchDateValidation = dataValidator.isValidText(
+            matchData.matchDate
+        );
+        if (!matchDateValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["matchDate"] =
+                matchDateValidation.message;
+        }
+
+        return validationResults;
+    }
+};
 //
+//
+//
+//
+// ADMIN VIEW ALL MATCH
+exports.viewAllMatches = async (req, res) => {
+    const token = req.headers.token;
+    const { adminId } = req.body;
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    // Check if adminId is missing
+    if (!adminId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Admin ID is missing"
+        });
+    }
+
+    try {
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches adminId from request body
+                if (decoded.adminId != adminId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch all admin matches
+                try {
+                    const allMatches = await Admin.viewAllMatches(adminId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "All Admin Matches retrieved successfully",
+                        data: allMatches,
+                    });
+                } catch (error) {
+                    console.error("Error viewing all matches:", error);
+                    if (error.message === "Admin not found") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+// ADMIN VIEW ONE MATCH
+exports.viewOneMatch = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { adminId, matchId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if adminId is missing
+        if (!adminId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Admin ID is missing"
+            });
+        }
+
+        // Check if matchId is missing
+        if (!matchId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Match ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches adminId from request body
+                if (decoded.adminId != adminId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch details of one admin match
+                try {
+                    const matchDetails = await Admin.viewOneMatch(
+                        matchId,
+                        adminId
+                    );
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Admin Match details",
+                        data: matchDetails,
+                    });
+                } catch (error) {
+                    if (
+                        error.message === "Match not found" ||
+                        error.message === "Admin not found"
+                    ) {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        console.error("Error viewing admin match details:", error);
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+// ADMIN END ONE MATCH
+exports.endOneMatch = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { adminId, matchId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if adminId is missing
+        if (!adminId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Admin ID is missing"
+            });
+        }
+
+        // Check if matchId is missing
+        if (!matchId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Match ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches adminId from request body
+                if (decoded.adminId != adminId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to end the match
+                try {
+                    await Admin.endOneMatch(adminId, matchId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Match ended successfully"
+                    });
+                } catch (error) {
+                    console.error("Error ending match:", error);
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+// ADMIN ADD MATCH
+exports.addMatchPoint = async (req, res) => {
+    const token = req.headers.token;
+
+    try {
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        jwt.verify(token, process.env.JWT_SECRET_KEY_ADMIN, async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Token has expired"
+                    });
+                } else {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+            }
+
+            const uploadMatchImages = multer({
+                storage: multer.memoryStorage(),
+            }).fields([
+                { name: 'teamOneImage', maxCount: 1 },
+                { name: 'teamTwoImage', maxCount: 1 }
+            ]);
+
+            uploadMatchImages(req, res, async function (err) {
+                if (err) {
+                    console.error("File upload failed:", err);
+                    return res.status(400).json({
+                        status: "error",
+                        message: "File upload failed",
+                        results: err.message,
+                    });
+                }
+
+                const { adminId, teamOneName, teamTwoName, teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch } = req.body;
+
+                if (!adminId) {
+                    return res.status(401).json({
+                        status: "failed",
+                        message: "adminId is missing"
+                    });
+                }
+
+                if (decoded.adminId != adminId) {
+                    console.error("Unauthorized access");
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                const teamOneImageFile = req.files['teamOneImage'] ? req.files['teamOneImage'][0] : null;
+                const teamTwoImageFile = req.files['teamTwoImage'] ? req.files['teamTwoImage'][0] : null;
+
+                const validationResults = validateMatchData(req.body, teamOneImageFile, teamTwoImageFile);
+
+                if (!validationResults.isValid) {
+                    console.error("Validation failed:", validationResults.errors);
+                    return res.status(400).json({
+                        status: "error",
+                        message: "Validation failed",
+                        results: validationResults.errors,
+                    });
+                }
+
+                try {
+                    const teamOneImageUrl = await uploadFileToS3(
+                        teamOneImageFile.buffer,
+                        teamOneImageFile.originalname,
+                        teamOneImageFile.mimetype
+                    );
+
+                    const teamTwoImageUrl = await uploadFileToS3(
+                        teamTwoImageFile.buffer,
+                        teamTwoImageFile.originalname,
+                        teamTwoImageFile.mimetype
+                    );
+
+                    const matchData = {
+                        adminId,
+                        teamOneName,
+                        teamTwoName,
+                        teamOneImage: teamOneImageUrl,
+                        teamTwoImage: teamTwoImageUrl,
+                        teamOneTotalGoalsInTheMatch,
+                        teamTwoTotalGoalsInTheMatch,
+                        deleteStatus: false,
+                        updateStatus: false,
+                        addedDate: new Date()
+                    };
+
+                    const addedMatchId = await Admin.addMatch(matchData);
+
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Match added successfully",
+                        data: {
+                            matchId: addedMatchId,
+                            ...matchData
+                        }
+                    });
+                } catch (error) {
+                    console.error("Error during adding match:", error);
+                    return res.status(422).json({
+                        status: "error",
+                        error: error.message
+                    });
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Error during adding match:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+
+    async function uploadFileToS3(fileBuffer, fileName, mimeType, deleteOnError = false) {
+        try {
+            const uploadParams = {
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: `matchImages/${fileName}`,
+                Body: fileBuffer,
+                ACL: "public-read",
+                ContentType: mimeType,
+            };
+            const command = new PutObjectCommand(uploadParams);
+            await s3Client.send(command);
+            return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
+        } catch (error) {
+            console.error("Error uploading file to S3:", error);
+            if (deleteOnError) {
+                const s3Key = fileName.split('/').pop();
+                const params = {
+                    Bucket: process.env.S3_BUCKET_NAME,
+                    Key: `matchImages/${s3Key}`
+                };
+                try {
+                    await s3Client.send(new DeleteObjectCommand(params));
+                } catch (s3Error) {
+                    console.error("Error deleting file from S3:", s3Error);
+                }
+            }
+            throw error;
+        }
+    }
+
+    function validateMatchData(matchData, teamOneImageFile, teamTwoImageFile) {
+        const validationResults = {
+            isValid: true,
+            errors: {},
+        };
+        const matchNameValidation = dataValidator.isValidText(
+            matchData.matchName
+        );
+        if (!matchNameValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["matchName"] =
+                matchNameValidation.message;
+        }
+
+        const teamOneNameValidation = dataValidator.isValidText(
+            matchData.teamOneName
+        );
+        if (!teamOneNameValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["teamOneName"] =
+                teamOneNameValidation.message;
+        }
+
+        const teamTwoNameValidation = dataValidator.isValidText(
+            matchData.teamTwoName
+        );
+        if (!teamTwoNameValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["teamTwoName"] =
+                teamTwoNameValidation.message;
+        }
+
+        if (!teamOneImageFile) {
+            validationResults.isValid = false;
+            validationResults.errors["teamOneImage"] =
+                "team one image is required";
+        } else {
+            const imageValidation =
+                dataValidator.isValidImageWith1MBConstraint(teamOneImageFile);
+            if (!imageValidation.isValid) {
+                validationResults.isValid = false;
+                validationResults.errors["teamOneImage"] =
+                    imageValidation.message;
+            }
+        }
+
+        if (!teamTwoImageFile) {
+            validationResults.isValid = false;
+            validationResults.errors["teamTwoImage"] =
+                "team two image is required";
+        } else {
+            const imageValidation =
+                dataValidator.isValidImageWith1MBConstraint(teamTwoImageFile);
+            if (!imageValidation.isValid) {
+                validationResults.isValid = false;
+                validationResults.errors["teamTwoImage"] =
+                    imageValidation.message;
+            }
+        }
+
+        const teamOneGoalsValidation = dataValidator.isValidText(
+            matchData.teamOneTotalGoalsInTheMatch
+        );
+        if (!teamOneGoalsValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["teamOneTotalGoalsInTheMatch"] =
+                teamOneGoalsValidation.message;
+        }
+
+        const teamTwoGoalsValidation = dataValidator.isValidText(
+            matchData.teamTwoTotalGoalsInTheMatch
+        );
+        if (!teamTwoGoalsValidation.isValid) {
+            validationResults.isValid = false;
+            validationResults.errors["teamTwoTotalGoalsInTheMatch"] =
+                teamTwoGoalsValidation.message;
+        }
 
 
+        return validationResults;
+    }
+};
+//
+//
+//
+//
+// ADMIN VIEW ALL MATCH POINTS
+exports.viewAllMatchPoints = async (req, res) => {
+    const token = req.headers.token;
+    const { adminId } = req.body;
+
+    // Check if token is missing
+    if (!token) {
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
+    }
+
+    // Check if adminId is missing
+    if (!adminId) {
+        return res.status(401).json({
+            status: "failed",
+            message: "Admin ID is missing"
+        });
+    }
+
+    try {
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches adminId from request body
+                if (decoded.adminId != adminId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch all match points for the admin
+                try {
+                    const allMatchPoints = await Admin.viewAllMatchPoints(adminId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "All Admin Match Points retrieved successfully",
+                        data: allMatchPoints,
+                    });
+                } catch (error) {
+                    console.error("Error viewing all match points:", error);
+                    if (error.message === "Admin not found") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
 
 
 

@@ -14,6 +14,9 @@ router.post("/playerViewAllNotifications", PlayerController.viewAllNotifications
 router.post("/playerViewOneNotification", PlayerController.viewOneNotification);
 router.post("/playerSendLeaveRequestToClub", PlayerController.sendLeaveRequestToClub);
 router.post("/playerViewAllApprovedLeaveRequests", PlayerController.viewAllApprovedLeaveRequests);
+router.post("/playerViewAllMatches", PlayerController.viewAllMatches);
+router.post("/playerViewOneMatch", PlayerController.viewOneMatch);
+router.post("/playerViewAllMatchPoints", PlayerController.viewAllMatchPoints);
 
 
 
