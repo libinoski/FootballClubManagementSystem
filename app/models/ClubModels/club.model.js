@@ -218,7 +218,7 @@ Club.updateProfile = async (updatedClub) => {
 // CLUB VIEW ALL UNAPPROVED PLAYERS
 Club.viewAllUnapprovedPlayers = async (clubId) => {
     try {
-        const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended =0";
+        const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended =0";
         const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
 
         if (clubCheckResult.length === 0) {
@@ -227,7 +227,7 @@ Club.viewAllUnapprovedPlayers = async (clubId) => {
 
         const viewUnapprovedPlayersQuery = `
         SELECT * FROM Players
-        WHERE clubId = ? AND isApproved = 0 AND deleteStatus = 0 AND isSuspended = 0
+        WHERE clubId = ? AND isApproved = 0 
       `;
         const unapprovedPlayers = await dbQuery(viewUnapprovedPlayersQuery, [clubId]);
 
@@ -244,7 +244,7 @@ Club.viewAllUnapprovedPlayers = async (clubId) => {
 // CLUB VIEW ONE UNAPPROVED PLAYER
 Club.viewOneUnapprovedPlayer = async (clubId, playerId) => {
     try {
-        const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended =0";
+        const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended =0";
         const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
 
         if (clubCheckResult.length === 0) {
@@ -253,7 +253,7 @@ Club.viewOneUnapprovedPlayer = async (clubId, playerId) => {
 
         const viewUnapprovedPlayerQuery = `
         SELECT * FROM Players
-        WHERE clubId = ? AND playerId = ? AND isApproved = 0 AND deleteStatus = 0
+        WHERE clubId = ? AND playerId = ? AND isApproved = 0
       `;
         const unapprovedPlayerResult = await dbQuery(viewUnapprovedPlayerQuery, [clubId, playerId]);
 
@@ -275,14 +275,14 @@ Club.viewOneUnapprovedPlayer = async (clubId, playerId) => {
 Club.approveOneplayer = async (clubId, playerId) => {
     try {
         // Validate existence of the club
-        const clubCheckQuery = "SELECT * FROM clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+        const clubCheckQuery = "SELECT * FROM clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
         const clubCheckRes = await dbQuery(clubCheckQuery, [clubId]);
         if (clubCheckRes.length === 0) {
             throw new Error("club not found");
         }
 
         // Validate existence and status of the Player
-        const playerCheckQuery = "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isApproved = 0 AND deleteStatus = 0";
+        const playerCheckQuery = "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isApproved = 0";
         const playerCheckRes = await dbQuery(playerCheckQuery, [playerId, clubId]);
         if (playerCheckRes.length === 0) {
             throw new Error("Player not found or already approved");
@@ -306,7 +306,7 @@ Club.approveOneplayer = async (clubId, playerId) => {
 Club.viewAllPlayers = async (clubId) => {
     try {
         // Check if the club exists and is active
-        const checkclubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+        const checkclubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
         const clubCheckResult = await dbQuery(checkclubQuery, [clubId]);
 
         if (clubCheckResult.length === 0) {
@@ -315,7 +315,7 @@ Club.viewAllPlayers = async (clubId) => {
 
         // Fetch all players associated with the club
         const viewAllPlayersQuery =
-            "SELECT * FROM Players WHERE clubId = ? AND isActive = 1 AND isSuspended = 0 AND isApproved = 1 AND deleteStatus = 0 ";
+            "SELECT * FROM Players WHERE clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0";
         const allPlayers = await dbQuery(viewAllPlayersQuery, [clubId]);
 
         return allPlayers;
@@ -331,7 +331,7 @@ Club.viewAllPlayers = async (clubId) => {
 // CLUB VIEW ONE PLAYER
 Club.viewOnePlayer = async (clubId, playerId) => {
     try {
-      const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+      const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
       const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
   
       if (clubCheckResult.length === 0) {
@@ -339,7 +339,7 @@ Club.viewOnePlayer = async (clubId, playerId) => {
       }
   
       const viewPlayerQuery =
-        "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isActive = 1 AND isSuspended = 0 AND isApproved = 1";
+        "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0";
       const player = await dbQuery(viewPlayerQuery, [playerId, clubId]);
   
       if (player.length === 0) {
@@ -361,7 +361,7 @@ Club.viewOnePlayer = async (clubId, playerId) => {
 Club.deleteOnePlayer = async (clubId, playerId) => {
     try {
         // Validate existence of the club
-        const clubCheckQuery = "SELECT * FROM clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+        const clubCheckQuery = "SELECT * FROM clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0 ";
         const clubCheckRes = await dbQuery(clubCheckQuery, [clubId]);
         if (clubCheckRes.length === 0) {
             throw new Error("club not found");
@@ -396,7 +396,7 @@ Club.searchPlayers = async (clubId, searchQuery) => {
         SELECT * FROM Clubs 
         WHERE clubId = ? 
           AND isActive = 1 
-          AND deleteStatus = 0
+          AND isSuspended = 0
       `;
   
       const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
@@ -458,7 +458,7 @@ Club.searchPlayers = async (clubId, searchQuery) => {
 Club.suspendOnePlayer = async (playerId, clubId) => {
     try {
       // Validate existence of the club
-      const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+      const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
       const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
       if (clubCheckResult.length === 0) {
         throw new Error("Club not found");
@@ -491,7 +491,7 @@ Club.suspendOnePlayer = async (playerId, clubId) => {
 Club.unsuspendOnePlayer = async (playerId, clubId) => {
     try {
       // Validate existence of the club
-      const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+      const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
       const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
       if (clubCheckResult.length === 0) {
         throw new Error("Club not found");
@@ -523,7 +523,7 @@ Club.unsuspendOnePlayer = async (playerId, clubId) => {
 Club.viewAllSuspendedPlayers = async (clubId) => {
     try {
       const checkClubQuery =
-        "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+        "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
       const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
   
       if (clubCheckResult.length === 0) {
@@ -549,7 +549,7 @@ Club.viewAllSuspendedPlayers = async (clubId) => {
 Club.viewOneSuspendedPlayer = async (playerId, clubId) => {
     try {
       const checkClubQuery =
-        "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+        "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
       const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
   
       if (clubCheckResult.length === 0) {
@@ -582,7 +582,7 @@ Club.viewOneSuspendedPlayer = async (playerId, clubId) => {
 Club.sendNotificationToPlayer = async (clubId, playerId, message) => {
     try {
       // Check if the club exists and is active
-      const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
+      const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
       const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
       if (clubCheckResult.length === 0) {
         throw new Error("Club not found");
@@ -624,7 +624,7 @@ Club.sendNotificationToPlayer = async (clubId, playerId, message) => {
 Club.addOneInjuryUpdate = async (playerId, clubId, injuryData) => {
     try {
         // Check if the club exists and is active
-        const clubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1";
+        const clubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspened = 0";
         const [clubResult] = await db.query(clubQuery, [clubId]);
         
         if (clubResult.length === 0) {
@@ -679,7 +679,7 @@ Club.viewAllLeaveRequests = async (clubId) => {
         const clubQuery = `
             SELECT *
             FROM Players
-            WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
+            WHERE clubId = ? AND isActive = 1 AND isSuspended = 0
         `;
         const clubQueryResult = await dbQuery(clubQuery, [clubId]);
 
@@ -718,7 +718,7 @@ Club.viewOneLeaveRequest = async (leaveRequestId, clubId) => {
         const clubQuery = `
             SELECT *
             FROM Clubs
-            WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0
+            WHERE clubId = ? AND isActive = 1 AND isSuspended = 0
         `;
         const clubQueryResult = await dbQuery(clubQuery, [clubId]);
 
@@ -756,7 +756,7 @@ Club.approveOneLeaveRequest = async (leaveRequestId, clubId) => {
         const clubQuery = `
             SELECT *
             FROM Clubs
-            WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0
+            WHERE clubId = ? AND isActive = 1 AND isSuspended = 0
         `;
         const clubQueryResult = await dbQuery(clubQuery, [clubId]);
 
@@ -800,7 +800,7 @@ Club.approveOneLeaveRequest = async (leaveRequestId, clubId) => {
 Club.viewAllMatches = async (clubId) => {
     try {
     // Check if clubId exists
-    const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND deleteStatus = 0 AND isSuspended = 0";
+    const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
     const clubExistsResult = await db.query(clubExistsQuery, [clubId]);
 
     if (clubExistsResult[0].count === 0) {
@@ -824,7 +824,7 @@ Club.viewOneMatch = async (clubId,matchId) => {
     try {
 
     // Check if clubId exists
-    const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND deleteStatus = 0 AND isSuspended = 0";
+    const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
     const clubExistsResult = await db.query(clubExistsQuery, [clubId]);
 
     if (clubExistsResult[0].count === 0) {
@@ -857,7 +857,7 @@ Club.viewOneMatch = async (clubId,matchId) => {
 Club.viewAllMatchPoints = async (clubId) => {
     try {
       // Check if the club exists
-      const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND deleteStatus = 0 AND isActive = 1";
+      const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isSuspended = 0 AND isActive = 1";
       const clubExistsResult = await dbQuery(clubExistsQuery, [clubId]);
   
       if (clubExistsResult.length === 0) {
