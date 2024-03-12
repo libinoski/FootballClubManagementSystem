@@ -238,17 +238,6 @@ Player.updateProfile = async (updatedPlayer) => {
             throw new Error("Player not found");
         }
 
-        const checkMobileQuery =
-            "SELECT * FROM Players WHERE playerMobile = ? AND playerId != ? AND deleteStatus = 0 AND isSuspended = 0 AND isActive = 1";
-        const mobileRes = await dbQuery(checkMobileQuery, [
-            updatedPlayer.playerMobile,
-            updatedPlayer.playerId,
-        ]);
-
-        if (mobileRes.length > 0) {
-            throw new Error("Mobile Number Already Exists.");
-        }
-
         const updateQuery = `
               UPDATE Players
               SET

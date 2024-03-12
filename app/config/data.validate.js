@@ -269,23 +269,24 @@ function isValidEmail(email) {
 }
 
 
-
-
-
 // Validate age (restrict to numbers with a maximum of 3 digits).
 function isValidAge(age) {
-    if (isNullOrUndefined(age) || age.trim() === "") {
+    if (isNullOrUndefined(age) || age === "") {
         return {
             isValid: false,
             message: "Age cannot be empty."
         };
     }
 
+    // Convert age to string and then trim
+    const ageString = age.toString().trim();
+
     return {
-        isValid: /^\d{1,3}$/.test(age),
+        isValid: /^\d{1,3}$/.test(ageString),
         message: "Invalid Age. It must be a number up to 3 digits."
     };
 }
+
 
 
 // Confirm the validity of a name.

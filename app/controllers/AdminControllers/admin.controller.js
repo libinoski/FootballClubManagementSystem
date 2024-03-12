@@ -496,7 +496,6 @@ exports.updateProfile = async (req, res) => {
     const {
         adminId,
         adminName,
-        adminAadhar,
         adminMobile,
         adminAddress,
     } = req.body;
@@ -548,8 +547,6 @@ exports.updateProfile = async (req, res) => {
             const updatedAdmin = {
                 adminId,
                 adminName,
-                adminEmail,
-                adminAadhar: adminAadhar.replace(/\s/g, ''),
                 adminMobile: adminMobile.replace(/\s/g, ''),
                 adminAddress,
             };
@@ -566,15 +563,6 @@ exports.updateProfile = async (req, res) => {
                     validationResults.errors["adminName"] = [nameValidation.message];
                 }
 
-
-                const aadharValidation =
-                    dataValidator.isValidAadharNumber(updatedAdmin.adminAadhar);
-                if (!aadharValidation.isValid) {
-                    validationResults.isValid = false;
-                    validationResults.errors["adminAadhar"] = [
-                        aadharValidation.message,
-                    ];
-                }
 
                 const mobileValidation =
                     dataValidator.isValidMobileNumber(updatedAdmin.adminMobile);

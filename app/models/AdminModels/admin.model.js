@@ -176,17 +176,6 @@ Admin.updateProfile = async (updatedAdmin) => {
       throw new Error("Admin not found");
     }
 
-    const checkAadharQuery =
-      "SELECT * FROM Admins WHERE adminAadhar = ? AND adminId != ? AND deleteStatus = 0 AND isActive = 1";
-    const aadharRes = await dbQuery(checkAadharQuery, [
-      updatedAdmin.adminAadhar,
-      updatedAdmin.adminId,
-    ]);
-
-    if (aadharRes.length > 0) {
-      throw new Error("Aadhar Number Already Exists.");
-    }
-
     const updateQuery = `
             UPDATE Admins
             SET
@@ -194,7 +183,6 @@ Admin.updateProfile = async (updatedAdmin) => {
                 deleteStatus = 0,
                 isActive = 1,
                 adminName = ?,
-                adminAadhar = ?,
                 adminMobile = ?,
                 adminAddress = ?
             WHERE adminId = ? AND deleteStatus = 0 AND isActive = 1
@@ -202,7 +190,6 @@ Admin.updateProfile = async (updatedAdmin) => {
 
     await dbQuery(updateQuery, [
       updatedAdmin.adminName,
-      updatedAdmin.adminAadhar,
       updatedAdmin.adminMobile,
       updatedAdmin.adminAddress,
       updatedAdmin.adminId,

@@ -176,17 +176,6 @@ Club.updateProfile = async (updatedClub) => {
             throw new Error("Club not found");
         }
 
-        const checkMobileQuery =
-            "SELECT * FROM Clubs WHERE clubMobile = ? AND clubId != ? AND isSuspended = 0 AND isActive = 1";
-        const mobileRes = await dbQuery(checkMobileQuery, [
-            updatedClub.clubMobile,
-            updatedClub.clubId,
-        ]);
-
-        if (mobileRes.length > 0) {
-            throw new Error("Mobile Number Already Exists.");
-        }
-
         const updateQuery = `
               UPDATE Clubs
               SET
@@ -194,7 +183,7 @@ Club.updateProfile = async (updatedClub) => {
                   isSuspended = 0,
                   isActive = 1,
                   clubName = ?,
-                  clubMobile = ?,
+                  managerMobile = ?,
                   clubAddress = ?,
                   managerName = ?
               WHERE clubId = ? AND isSuspended = 0 AND isActive = 1
@@ -202,7 +191,7 @@ Club.updateProfile = async (updatedClub) => {
 
         await dbQuery(updateQuery, [
             updatedClub.clubName,
-            updatedClub.clubMobile,
+            updatedClub.managerMobile,
             updatedClub.clubAddress,
             updatedClub.managerName,
             updatedClub.clubId,

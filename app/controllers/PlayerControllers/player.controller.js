@@ -266,9 +266,6 @@ Your Sports Club Team
         return validationResults;
     }
 };
-
-
-
 //
 //
 //
@@ -571,16 +568,9 @@ exports.updateProfile = async (req, res) => {
         });
     }
 
-    if (!clubId) {
-        return res.status(401).json({
-            status: "failed",
-            message: "Club ID is missing"
-        });
-    }
-
     jwt.verify(
         token,
-        process.env.JWT_SECRET_KEY_CLUB,
+        process.env.JWT_SECRET_KEY_PLAYER,
         async (err, decoded) => {
             if (err) {
                 if (err.name === "JsonWebTokenError") {
@@ -600,7 +590,7 @@ exports.updateProfile = async (req, res) => {
                 });
             }
 
-            if (decoded.clubId != clubId) {
+            if (decoded.playerId != playerId) {
                 return res.status(403).json({
                     status: "failed",
                     message: "Unauthorized access"
@@ -614,6 +604,7 @@ exports.updateProfile = async (req, res) => {
                 playerMobile: playerMobile.replace(/\s/g, ''),
                 playerAddress,
                 playerCountry,
+                playerAge,
                 playerPosition
             };
 
@@ -630,7 +621,7 @@ exports.updateProfile = async (req, res) => {
                 }
 
                 const mobileValidation =
-                    dataValidator.isValidMobileNumber(updatedPlayer.playerMobile);
+                    dataValidator.isValidMobileNumber(playerMobile);
                 if (!mobileValidation.isValid) {
                     validationResults.isValid = false;
                     validationResults.errors["playerMobile"] = [
@@ -646,12 +637,10 @@ exports.updateProfile = async (req, res) => {
                     ];
                 }
 
-                const ageValidation = dataValidator.isValidAge(playerAge);
-                if (!ageValidation.isValid) {
+                const ageValidationValidation = dataValidator.isValidAge(playerAge);
+                if (!ageValidationValidation.isValid) {
                     validationResults.isValid = false;
-                    validationResults.errors["playerAge"] = [
-                        ageValidation.message,
-                    ];
+                    validationResults.errors["playerAge"] = [ageValidationValidation.message];
                 }
 
                 const countryValidationValidation = dataValidator.isValidText(playerCountry);
@@ -690,8 +679,7 @@ exports.updateProfile = async (req, res) => {
             } catch (error) {
                 console.error("Error updating club profile:", error);
                 if (
-                    error.message === "Club not found" ||
-                    error.message === "Aadhar Number Already Exists."
+                    error.message === "Club not found" 
                 ) {
                     return res.status(422).json({
                         status: "error",

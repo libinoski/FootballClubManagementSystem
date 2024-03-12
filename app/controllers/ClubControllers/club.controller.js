@@ -542,7 +542,7 @@ exports.updateProfile = async (req, res) => {
     const {
         clubId,
         clubName,
-        clubMobile,
+        managerMobile,
         clubAddress,
         managerName,
     } = req.body;
@@ -590,11 +590,11 @@ exports.updateProfile = async (req, res) => {
                 });
             }
 
-            // Remove spaces from Aadhar number and mobile number
+            // Remove spaces from manager mobile number
             const updatedClub = {
                 clubId,
                 clubName,
-                clubMobile: clubMobile.replace(/\s/g, ''),
+                managerMobile: managerMobile.replace(/\s/g, ''),
                 clubAddress,
                 managerName,
             };
@@ -611,12 +611,10 @@ exports.updateProfile = async (req, res) => {
                     validationResults.errors["clubName"] = [nameValidation.message];
                 }
 
-
-                const mobileValidation =
-                    dataValidator.isValidMobileNumber(updatedClub.clubMobile);
+                const mobileValidation = dataValidator.isValidMobileNumber(managerMobile);
                 if (!mobileValidation.isValid) {
                     validationResults.isValid = false;
-                    validationResults.errors["clubMobile"] = [
+                    validationResults.errors["managerMobile"] = [
                         mobileValidation.message,
                     ];
                 }
@@ -634,8 +632,6 @@ exports.updateProfile = async (req, res) => {
                     validationResults.isValid = false;
                     validationResults.errors["managerName"] = [managerNameValidation.message];
                 }
-
-
 
                 return validationResults;
             }
@@ -659,17 +655,12 @@ exports.updateProfile = async (req, res) => {
                 });
             } catch (error) {
                 console.error("Error updating club profile:", error);
-                if (
-                    error.message === "Club not found" ||
-                    error.message === "Aadhar Number Already Exists."
-                ) {
+                if (error.message === "Club not found") {
                     return res.status(422).json({
                         status: "error",
                         error: error.message
                     });
-                } else if (
-                    error.message === "Error fetching updated club details."
-                ) {
+                } else if (error.message === "Error fetching updated club details.") {
                     return res.status(500).json({
                         status: "failed",
                         message: error.message
@@ -677,8 +668,7 @@ exports.updateProfile = async (req, res) => {
                 } else {
                     return res.status(500).json({
                         status: "failed",
-                        message: "Internal server error",
-                        error: error.message,
+                        message: "Internal Server Error"
                     });
                 }
             }
