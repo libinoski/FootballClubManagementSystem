@@ -17,6 +17,8 @@ router.post("/playerViewAllApprovedLeaveRequests", PlayerController.viewAllAppro
 router.post("/playerViewAllMatches", PlayerController.viewAllMatches);
 router.post("/playerViewOneMatch", PlayerController.viewOneMatch);
 router.post("/playerViewAllMatchPoints", PlayerController.viewAllMatchPoints);
+router.post("/playerViewAllNews", PlayerController.viewAllNews);
+router.post("/playerViewOneNews", PlayerController.viewOneNews);
 
 
 

@@ -893,7 +893,7 @@ Club.viewAllNews = async (clubId) => {
       const checkClubQuery = `
               SELECT clubId
               FROM Clubs
-              WHERE clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0
+              WHERE clubId = ? AND isActive = 1 AND isSuspended = 0
           `;
       const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
   
@@ -925,7 +925,7 @@ Club.viewOneNews = async (footballNewsId, clubId) => {
       const verifyClubQuery = `
               SELECT clubId
               FROM Clubs
-              WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
+              WHERE clubId = ? AND isActive = 1 AND isSuspended = 0
           `;
       const clubResult = await dbQuery(verifyClubQuery, [clubId]);
   
