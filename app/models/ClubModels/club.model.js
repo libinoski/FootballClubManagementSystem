@@ -227,7 +227,7 @@ Club.viewAllUnapprovedPlayers = async (clubId) => {
 
         const viewUnapprovedPlayersQuery = `
         SELECT * FROM Players
-        WHERE clubId = ? AND isApproved = 0 
+        WHERE clubId = ? AND isApproved = 0 AND deleteStatus = 0
       `;
         const unapprovedPlayers = await dbQuery(viewUnapprovedPlayersQuery, [clubId]);
 
@@ -253,7 +253,7 @@ Club.viewOneUnapprovedPlayer = async (clubId, playerId) => {
 
         const viewUnapprovedPlayerQuery = `
         SELECT * FROM Players
-        WHERE clubId = ? AND playerId = ? AND isApproved = 0
+        WHERE clubId = ? AND playerId = ? AND isApproved = 0 AND deleteStatus = 0
       `;
         const unapprovedPlayerResult = await dbQuery(viewUnapprovedPlayerQuery, [clubId, playerId]);
 
@@ -272,7 +272,7 @@ Club.viewOneUnapprovedPlayer = async (clubId, playerId) => {
 //
 //
 // CLUB APPROVE ONE PLAYER
-Club.approveOneplayer = async (clubId, playerId) => {
+Club.approveOnePlayer = async (clubId, playerId) => {
     try {
         // Validate existence of the club
         const clubCheckQuery = "SELECT * FROM clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
@@ -315,7 +315,7 @@ Club.viewAllPlayers = async (clubId) => {
 
         // Fetch all players associated with the club
         const viewAllPlayersQuery =
-            "SELECT * FROM Players WHERE clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0";
+            "SELECT * FROM Players WHERE clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0 AND isApproved = 1";
         const allPlayers = await dbQuery(viewAllPlayersQuery, [clubId]);
 
         return allPlayers;
@@ -339,7 +339,7 @@ Club.viewOnePlayer = async (clubId, playerId) => {
       }
   
       const viewPlayerQuery =
-        "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0";
+        "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0 AND isApproved = 1";
       const player = await dbQuery(viewPlayerQuery, [playerId, clubId]);
   
       if (player.length === 0) {
@@ -375,7 +375,7 @@ Club.deleteOnePlayer = async (clubId, playerId) => {
         }
 
         // Mark the Player as deleted
-        const deleteQuery = "UPDATE Players SET deleteStatus = 1 WHERE playerId = ? AND clubId = ?";
+        const deleteQuery = "UPDATE Players SET deleteStatus = 1 isApproved = 0 WHERE playerId = ? AND clubId = ?";
         await dbQuery(deleteQuery, [playerId, clubId]);
 
         return playerId; // Return the deleted playerId
