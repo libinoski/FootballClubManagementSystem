@@ -130,10 +130,14 @@ Player.login = async (email, password) => {
         const result = await dbQuery(query, [email]);
 
         if (result.length === 0) {
-            throw new Error("player not found");
+            throw new Error("Player not found");
         }
 
         const player = result[0];
+
+        if (player.isApproved === 0) {
+            throw new Error("Your account is not yet approved. Please wait for approval");
+        }
 
         const isMatch = await promisify(bcrypt.compare)(
             password,
@@ -150,6 +154,7 @@ Player.login = async (email, password) => {
         throw error;
     }
 };
+
 //
 //
 //

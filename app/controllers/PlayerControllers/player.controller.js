@@ -326,7 +326,7 @@ exports.login = async (req, res) => {
     } catch (error) {
         console.error('Error during player login:', error);
 
-        if (error.message === 'player not found' || error.message === 'Wrong password') {
+        if (error.message === 'player not found' || error.message === 'Wrong password' || error.message === 'Your account is not yet approved. Please wait for approval') {
             return res.status(422).json({
                 status: 'failed',
                 message: 'Login failed',
