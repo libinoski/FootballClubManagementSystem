@@ -77,8 +77,8 @@ exports.registration = async (req, res) => {
 
         try {
             const registrationResponse = await Admin.registration(adminData);
-            console.log('registrationResponse.adminName',registrationResponse.adminName)
-            console.log('registrationResponse.adminEmail',registrationResponse.adminEmail)
+            console.log('registrationResponse.adminName', registrationResponse.adminName)
+            console.log('registrationResponse.adminEmail', registrationResponse.adminEmail)
             // Setup email content
             const mailOptions = {
                 from: process.env.EMAIL_USER,
@@ -825,6 +825,203 @@ exports.addNews = async (req, res) => {
         } catch (error) {
             throw error;
         }
+    }
+};
+//
+//
+//
+//
+// ADMIN VIEW ALL NEWS
+exports.viewAllNews = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { adminId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if adminId is missing
+        if (!adminId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Admin ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                try {
+                    // Check if decoded token matches adminId from request body
+                    if (decoded.adminId != adminId) {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Unauthorized access"
+                        });
+                    }
+
+                    const allNewsData = await Admin.viewAllNews(adminId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "All admin news retrieved successfully",
+                        data: allNewsData,
+                    });
+                } catch (error) {
+                    console.error("Error viewing all admin news:", error);
+
+                    if (error.message === "Admin not found or inactive") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error during viewAllAdminNews:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+// ADMIN VIEW ONE NEWS
+exports.viewOneNews = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { adminId, footballNewsId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if adminId is missing
+        if (!adminId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Admin ID is missing"
+            });
+        }
+
+        // Check if footballNewsId is missing
+        if (!footballNewsId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Football News ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                try {
+                    // Check if decoded token matches adminId from request body
+                    if (decoded.adminId != adminId) {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Unauthorized access"
+                        });
+                    }
+
+                    const newsItemData = await Admin.viewOneNews(
+                        footballNewsId,
+                        adminId
+                    );
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Football news retrieved successfully",
+                        data: newsItemData,
+                    });
+                } catch (error) {
+                    console.error("Error viewing one football news:", error);
+                    if (
+                        error.message === "Football news not found" ||
+                        error.message === "Admin not found"
+                    ) {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error during viewOneFootballNews:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
     }
 };
 //

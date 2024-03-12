@@ -1418,3 +1418,203 @@ exports.viewAllMatchPoints = async (req, res) => {
         });
     }
 };
+//
+//
+//
+//
+// PLAYER VIEW ALL NEWS
+exports.viewAllNews = async (req, res) => {
+    try {
+      const token = req.headers.token;
+      const { playerId } = req.body;
+  
+      // Check if token is missing
+      if (!token) {
+        return res.status(403).json({
+          status: "failed",
+          message: "Token is missing"
+        });
+      }
+  
+      // Check if playerId is missing
+      if (!playerId) {
+        return res.status(401).json({
+          status: "failed",
+          message: "Player ID is missing"
+        });
+      }
+  
+      // Verifying the token
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY_PLAYER,
+        async (err, decoded) => {
+          if (err) {
+            if (err.name === "JsonWebTokenError") {
+              return res.status(403).json({
+                status: "error",
+                message: "Invalid token"
+              });
+            } else if (err.name === "TokenExpiredError") {
+              return res.status(403).json({
+                status: "error",
+                message: "Token has expired"
+              });
+            } else {
+              return res.status(403).json({
+                status: "failed",
+                message: "Unauthorized access"
+              });
+            }
+          }
+  
+          try {
+            // Check if decoded token matches playerId from request body
+            if (decoded.playerId != playerId) {
+              return res.status(403).json({
+                status: "error",
+                message: "Unauthorized access"
+              });
+            }
+  
+            const allNewsData = await Player.viewAllNews(playerId);
+            return res.status(200).json({
+              status: "success",
+              message: "All player news retrieved successfully",
+              data: allNewsData,
+            });
+          } catch (error) {
+            console.error("Error viewing all player news:", error);
+  
+            if (error.message === "Player not found") {
+              return res.status(422).json({
+                status: "error",
+                error: error.message
+              });
+            }
+  
+            return res.status(500).json({
+              status: "error",
+              message: "Internal server error",
+              error: error.message,
+            });
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error during viewAllPlayerNews:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  };
+//
+//
+//
+//
+//
+//
+// PLAYER VIEW ONE NEWS
+exports.viewOneNews = async (req, res) => {
+    try {
+      const token = req.headers.token;
+      const { playerId, footballNewsId } = req.body;
+  
+      // Check if token is missing
+      if (!token) {
+        return res.status(403).json({
+          status: "failed",
+          message: "Token is missing"
+        });
+      }
+  
+      // Check if playerId is missing
+      if (!playerId) {
+        return res.status(401).json({
+          status: "failed",
+          message: "Player ID is missing"
+        });
+      }
+  
+      // Check if footballNewsId is missing
+      if (!footballNewsId) {
+        return res.status(401).json({
+          status: "failed",
+          message: "Football News ID is missing"
+        });
+      }
+  
+      // Verifying the token
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY_PLAYER,
+        async (err, decoded) => {
+          if (err) {
+            if (err.name === "JsonWebTokenError") {
+              return res.status(403).json({
+                status: "error",
+                message: "Invalid token"
+              });
+            } else if (err.name === "TokenExpiredError") {
+              return res.status(403).json({
+                status: "error",
+                message: "Token has expired"
+              });
+            } else {
+              return res.status(403).json({
+                status: "failed",
+                message: "Unauthorized access"
+              });
+            }
+          }
+  
+          try {
+            // Check if decoded token matches playerId from request body
+            if (decoded.playerId != playerId) {
+              return res.status(403).json({
+                status: "error",
+                message: "Unauthorized access"
+              });
+            }
+  
+            const newsItemData = await Player.viewOneNews(
+              footballNewsId,
+              playerId
+            );
+            return res.status(200).json({
+              status: "success",
+              message: "Football news retrieved successfully",
+              data: newsItemData,
+            });
+          } catch (error) {
+            console.error("Error viewing one football news:", error);
+            if (
+              error.message === "Football news not found" ||
+              error.message === "Player not found"
+            ) {
+              return res.status(422).json({
+                status: "error",
+                error: error.message
+              });
+            } else {
+              return res.status(500).json({
+                status: "error",
+                message: "Internal server error",
+                error: error.message,
+              });
+            }
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error during viewOneFootballNews:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  };
+  

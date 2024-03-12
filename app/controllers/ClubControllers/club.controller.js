@@ -1548,89 +1548,89 @@ exports.unSuspendOnePlayer = async (req, res) => {
 exports.viewAllSuspendedPlayers = async (req, res) => {
     const token = req.headers.token;
     const { clubId } = req.body;
-  
+
     // Check if token is missing
     if (!token) {
-      return res.status(403).json({
-        status: "failed",
-        message: "Token is missing"
-      });
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
     }
-  
+
     // Check if clubId is missing
     if (!clubId) {
-      return res.status(401).json({
-        status: "failed",
-        message: "Club ID is missing"
-      });
+        return res.status(401).json({
+            status: "failed",
+            message: "Club ID is missing"
+        });
     }
-  
+
     try {
-      // Verifying the token
-      jwt.verify(
-        token,
-        process.env.JWT_SECRET_KEY_CLUB,
-        async (err, decoded) => {
-          if (err) {
-            if (err.name === "JsonWebTokenError") {
-              return res.status(403).json({
-                status: "failed",
-                message: "Invalid token"
-              });
-            } else if (err.name === "TokenExpiredError") {
-              return res.status(403).json({
-                status: "failed",
-                message: "Token has expired"
-              });
-            } else {
-              return res.status(403).json({
-                status: "failed",
-                message: "Unauthorized access"
-              });
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_CLUB,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches clubId from request body
+                if (decoded.clubId != clubId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch all suspended players
+                try {
+                    const suspendedPlayers = await Club.viewAllSuspendedPlayers(clubId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "All Suspended Players retrieved successfully",
+                        data: suspendedPlayers,
+                    });
+                } catch (error) {
+                    console.error("Error viewing all suspended players:", error);
+                    if (error.message === "Club not found") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
             }
-          }
-  
-          // Check if decoded token matches clubId from request body
-          if (decoded.clubId != clubId) {
-            return res.status(403).json({
-              status: "failed",
-              message: "Unauthorized access"
-            });
-          }
-  
-          // Token is valid, proceed to fetch all suspended players
-          try {
-            const suspendedPlayers = await Club.viewAllSuspendedPlayers(clubId);
-            return res.status(200).json({
-              status: "success",
-              message: "All Suspended Players retrieved successfully",
-              data: suspendedPlayers,
-            });
-          } catch (error) {
-            console.error("Error viewing all suspended players:", error);
-            if (error.message === "Club not found") {
-              return res.status(422).json({
-                status: "error",
-                error: error.message
-              });
-            }
-            return res.status(500).json({
-              status: "error",
-              message: "Internal server error",
-              error: error.message,
-            });
-          }
-        }
-      );
+        );
     } catch (error) {
-      console.error("Error verifying token:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Internal server error",
-        error: error.message,
-      });
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
     }
-  };
+};
 //
 //
 //
@@ -1638,105 +1638,105 @@ exports.viewAllSuspendedPlayers = async (req, res) => {
 // CLUB VIEW ONE SUSPENDED PLAYER
 exports.viewOneSuspendedPlayer = async (req, res) => {
     try {
-      const token = req.headers.token;
-      const { clubId, playerId } = req.body;
-  
-      // Check if token is missing
-      if (!token) {
-        return res.status(403).json({
-          status: "failed",
-          message: "Token is missing"
-        });
-      }
-  
-      // Check if clubId is missing
-      if (!clubId) {
-        return res.status(401).json({
-          status: "failed",
-          message: "Club ID is missing"
-        });
-      }
-  
-      // Check if playerId is missing
-      if (!playerId) {
-        return res.status(401).json({
-          status: "failed",
-          message: "Player ID is missing"
-        });
-      }
-  
-      // Verifying the token
-      jwt.verify(
-        token,
-        process.env.JWT_SECRET_KEY_CLUB,
-        async (err, decoded) => {
-          if (err) {
-            if (err.name === "JsonWebTokenError") {
-              return res.status(403).json({
-                status: "failed",
-                message: "Invalid token"
-              });
-            } else if (err.name === "TokenExpiredError") {
-              return res.status(403).json({
-                status: "failed",
-                message: "Token has expired"
-              });
-            } else {
-              return res.status(403).json({
-                status: "failed",
-                message: "Unauthorized access"
-              });
-            }
-          }
-  
-          // Check if decoded token matches clubId from request body
-          if (decoded.clubId != clubId) {
+        const token = req.headers.token;
+        const { clubId, playerId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
             return res.status(403).json({
-              status: "failed",
-              message: "Unauthorized access"
+                status: "failed",
+                message: "Token is missing"
             });
-          }
-  
-          // Token is valid, proceed to fetch details of one suspended player
-          try {
-            const suspendedPlayerDetails = await Club.viewOneSuspendedPlayer(
-              playerId,
-              clubId
-            );
-            return res.status(200).json({
-              status: "success",
-              message: "Suspended Player details",
-              data: suspendedPlayerDetails,
-            });
-          } catch (error) {
-            if (
-              error.message === "Suspended player not found" ||
-              error.message === "Club not found"
-            ) {
-              return res.status(422).json({
-                status: "error",
-                error: error.message
-              });
-            } else {
-              console.error("Error viewing suspended player details:", error);
-              return res.status(500).json({
-                status: "error",
-                message: "Internal server error",
-                error: error.message,
-              });
-            }
-          }
         }
-      );
+
+        // Check if clubId is missing
+        if (!clubId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Club ID is missing"
+            });
+        }
+
+        // Check if playerId is missing
+        if (!playerId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Player ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_CLUB,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches clubId from request body
+                if (decoded.clubId != clubId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch details of one suspended player
+                try {
+                    const suspendedPlayerDetails = await Club.viewOneSuspendedPlayer(
+                        playerId,
+                        clubId
+                    );
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Suspended Player details",
+                        data: suspendedPlayerDetails,
+                    });
+                } catch (error) {
+                    if (
+                        error.message === "Suspended player not found" ||
+                        error.message === "Club not found"
+                    ) {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        console.error("Error viewing suspended player details:", error);
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
     } catch (error) {
-      console.error("Error verifying token:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Internal server error",
-        error: error.message,
-      });
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
     }
-  };
+};
 //
 //
 //
@@ -1744,128 +1744,128 @@ exports.viewOneSuspendedPlayer = async (req, res) => {
 // CLUB SEND NOTIFICATION TO PLAYER
 exports.sendNotificationToPlayer = async (req, res) => {
     try {
-      const token = req.headers.token;
-      const { clubId, playerId, message } = req.body;
-  
-      // Check if token is provided
-      if (!token) {
-        return res.status(403).json({
-          status: "error",
-          message: "Token is missing"
-        });
-      }
-  
-      // Check if clubId, playerId, and message are provided
-      if (!clubId) {
-        return res.status(401).json({
-          status: "error",
-          message: "Club ID is missing"
-        });
-      }
-      if (!playerId) {
-        return res.status(401).json({
-          status: "error",
-          message: "Player ID is missing"
-        });
-      }
-  
-      // Token verification
-      jwt.verify(token, process.env.JWT_SECRET_KEY_CLUB, async (err, decoded) => {
-        if (err) {
-          if (err.name === "JsonWebTokenError") {
+        const token = req.headers.token;
+        const { clubId, playerId, message } = req.body;
+
+        // Check if token is provided
+        if (!token) {
             return res.status(403).json({
-              status: "error",
-              message: "Invalid or missing token"
+                status: "error",
+                message: "Token is missing"
             });
-          } else if (err.name === "TokenExpiredError") {
-            return res.status(403).json({
-              status: "error",
-              message: "Token has expired"
+        }
+
+        // Check if clubId, playerId, and message are provided
+        if (!clubId) {
+            return res.status(401).json({
+                status: "error",
+                message: "Club ID is missing"
             });
-          } else {
-            return res.status(403).json({
-              status: "error",
-              message: "Unauthorized access"
+        }
+        if (!playerId) {
+            return res.status(401).json({
+                status: "error",
+                message: "Player ID is missing"
             });
-          }
         }
-  
-        // Check if the decoded clubId matches the provided clubId
-        if (decoded.clubId != clubId) {
-          return res.status(403).json({
-            status: "error",
-            message: "Unauthorized access"
-          });
-        }
-  
-        // Function to validate notification message
-        function validateNotificationData(message) {
-          const validationResults = {
-            isValid: true,
-            errors: {},
-          };
-  
-          // Your validation logic here
-          const messageValidation = dataValidator.isValidMessage(message);
-          if (!messageValidation.isValid) {
-            validationResults.isValid = false;
-            validationResults.errors["message"] = [messageValidation.message];
-          }
-  
-          return validationResults;
-        }
-  
-        // Validate notification message
-        const validationResults = validateNotificationData(message);
-  
-        // If validation fails, return error response
-        if (!validationResults.isValid) {
-          return res.status(400).json({
-            status: "error",
-            message: "Validation failed",
-            errors: validationResults.errors
-          });
-        }
-  
-        try {
-          // Send notification to player
-          const notificationDetails = await Club.sendNotificationToPlayer(clubId, playerId, message);
-  
-          // Return success response
-          return res.status(200).json({
-            status: "success",
-            message: "Notification sent successfully",
-            data: notificationDetails
-          });
-        } catch (error) {
-          // Handle errors
-          console.error("Error sending notification to player:", error);
-  
-          // Return appropriate error response
-          if (error.message === "Club not found" || error.message === "Player not found or not active") {
-            return res.status(422).json({
-              status: "error",
-              error: error.message
-            });
-          }
-  
-          return res.status(500).json({
+
+        // Token verification
+        jwt.verify(token, process.env.JWT_SECRET_KEY_CLUB, async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Invalid or missing token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Token has expired"
+                    });
+                } else {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Unauthorized access"
+                    });
+                }
+            }
+
+            // Check if the decoded clubId matches the provided clubId
+            if (decoded.clubId != clubId) {
+                return res.status(403).json({
+                    status: "error",
+                    message: "Unauthorized access"
+                });
+            }
+
+            // Function to validate notification message
+            function validateNotificationData(message) {
+                const validationResults = {
+                    isValid: true,
+                    errors: {},
+                };
+
+                // Your validation logic here
+                const messageValidation = dataValidator.isValidMessage(message);
+                if (!messageValidation.isValid) {
+                    validationResults.isValid = false;
+                    validationResults.errors["message"] = [messageValidation.message];
+                }
+
+                return validationResults;
+            }
+
+            // Validate notification message
+            const validationResults = validateNotificationData(message);
+
+            // If validation fails, return error response
+            if (!validationResults.isValid) {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Validation failed",
+                    errors: validationResults.errors
+                });
+            }
+
+            try {
+                // Send notification to player
+                const notificationDetails = await Club.sendNotificationToPlayer(clubId, playerId, message);
+
+                // Return success response
+                return res.status(200).json({
+                    status: "success",
+                    message: "Notification sent successfully",
+                    data: notificationDetails
+                });
+            } catch (error) {
+                // Handle errors
+                console.error("Error sending notification to player:", error);
+
+                // Return appropriate error response
+                if (error.message === "Club not found" || error.message === "Player not found or not active") {
+                    return res.status(422).json({
+                        status: "error",
+                        error: error.message
+                    });
+                }
+
+                return res.status(500).json({
+                    status: "error",
+                    message: "Internal server error",
+                    error: error.message
+                });
+            }
+        });
+    } catch (error) {
+        // Handle unexpected errors
+        console.error("Error in sendNotificationToPlayer controller:", error);
+        return res.status(500).json({
             status: "error",
             message: "Internal server error",
             error: error.message
-          });
-        }
-      });
-    } catch (error) {
-      // Handle unexpected errors
-      console.error("Error in sendNotificationToPlayer controller:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Internal server error",
-        error: error.message
-      });
+        });
     }
-  };
+};
 //
 //
 //
@@ -2014,101 +2014,98 @@ exports.addOneInjuryUpdate = async (req, res) => {
 //
 //
 //
-//
-//
-//
 // CLUB VIEW ALL NOTIFICATIONS FROM PLAYER
 exports.viewAllLeaveRequests = async (req, res) => {
     try {
-      const token = req.headers.token;
-      const {clubId} = req.body;
-  
-      // Check if token is missing
-      if (!token) {
-        return res.status(403).json({
-          status: "failed",
-          message: "Token is missing"
-        });
-      }
-  
-      // Check if clubId is missing
-      if (!clubId) {
-        return res.status(401).json({
-          status: "failed",
-          message: "Club ID is missing"
-        });
-      }
+        const token = req.headers.token;
+        const { clubId } = req.body;
 
-      
-  
-      // Verifying the token
-      jwt.verify(token, process.env.JWT_SECRET_KEY_CLUB, async (err, decoded) => {
-        if (err) {
-          if (err.name === "JsonWebTokenError") {
+        // Check if token is missing
+        if (!token) {
             return res.status(403).json({
-              status: "error",
-              message: "Invalid token"
+                status: "failed",
+                message: "Token is missing"
             });
-          } else if (err.name === "TokenExpiredError") {
-            return res.status(403).json({
-              status: "error",
-              message: "Token has expired"
-            });
-          } else {
-            return res.status(403).json({
-              status: "failed",
-              message: "Unauthorized access"
-            });
-          }
         }
-  
-        try {
-          // Check if decoded token matches clubId from request body
-          if (decoded.clubId != clubId) {
-            return res.status(403).json({
-              status: "error",
-              message: "Unauthorized access"
+
+        // Check if clubId is missing
+        if (!clubId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Club ID is missing"
             });
-          }
-  
-          const leaveRequests = await Club.viewAllLeaveRequests(clubId);
-  
-          return res.status(200).json({
-            status: "success",
-            message: "All leave requests retrieved successfully",
-            data: leaveRequests
-          });
-        } catch (error) {
-          // Handle specific errors returned by the model
-          if (error.message === "Club not found") {
-            return res.status(422).json({
-              status: "error",
-              message: "Club not found",
-              error : error.message
-            });
-          } else if (error.message === "No successful leave requests found for this club") {
-            return res.status(422).json({
-              status: "error",
-              message: "No successful leave requests found for this club",
-              error : error.message
-            });
-          }
-  
-          console.error("Error viewing all leave requests for club:", error);
-          return res.status(500).json({
+        }
+
+
+
+        // Verifying the token
+        jwt.verify(token, process.env.JWT_SECRET_KEY_CLUB, async (err, decoded) => {
+            if (err) {
+                if (err.name === "JsonWebTokenError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Invalid token"
+                    });
+                } else if (err.name === "TokenExpiredError") {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Token has expired"
+                    });
+                } else {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+            }
+
+            try {
+                // Check if decoded token matches clubId from request body
+                if (decoded.clubId != clubId) {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                const leaveRequests = await Club.viewAllLeaveRequests(clubId);
+
+                return res.status(200).json({
+                    status: "success",
+                    message: "All leave requests retrieved successfully",
+                    data: leaveRequests
+                });
+            } catch (error) {
+                // Handle specific errors returned by the model
+                if (error.message === "Club not found") {
+                    return res.status(422).json({
+                        status: "error",
+                        message: "Club not found",
+                        error: error.message
+                    });
+                } else if (error.message === "No successful leave requests found for this club") {
+                    return res.status(422).json({
+                        status: "error",
+                        message: "No successful leave requests found for this club",
+                        error: error.message
+                    });
+                }
+
+                console.error("Error viewing all leave requests for club:", error);
+                return res.status(500).json({
+                    status: "error",
+                    message: "Internal server error",
+                    error: error.message
+                });
+            }
+        });
+    } catch (error) {
+        console.error("Error during viewAllLeaveRequests:", error);
+        return res.status(500).json({
             status: "error",
             message: "Internal server error",
             error: error.message
-          });
-        }
-      });
-    } catch (error) {
-      console.error("Error during viewAllLeaveRequests:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Internal server error",
-        error: error.message
-      });
+        });
     }
 };
 //
@@ -2315,89 +2312,89 @@ exports.approveOneLeaveRequest = async (req, res) => {
 exports.viewAllMatches = async (req, res) => {
     const token = req.headers.token;
     const { clubId } = req.body;
-  
+
     // Check if token is missing
     if (!token) {
-      return res.status(403).json({
-        status: "failed",
-        message: "Token is missing"
-      });
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
     }
-  
+
     // Check if clubId is missing
     if (!clubId) {
-      return res.status(401).json({
-        status: "failed",
-        message: "clubId is missing"
-      });
+        return res.status(401).json({
+            status: "failed",
+            message: "clubId is missing"
+        });
     }
-  
+
     try {
-      // Verifying the token
-      jwt.verify(
-        token,
-        process.env.JWT_SECRET_KEY_CLUB,
-        async (err, decoded) => {
-          if (err) {
-            if (err.name === "JsonWebTokenError") {
-              return res.status(403).json({
-                status: "failed",
-                message: "Invalid token"
-              });
-            } else if (err.name === "TokenExpiredError") {
-              return res.status(403).json({
-                status: "failed",
-                message: "Token has expired"
-              });
-            } else {
-              return res.status(403).json({
-                status: "failed",
-                message: "Unauthorized access"
-              });
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_CLUB,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                // Check if decoded token matches clubId from request body
+                if (decoded.clubId != clubId) {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Unauthorized access"
+                    });
+                }
+
+                // Token is valid, proceed to fetch all admin matches
+                try {
+                    const allMatches = await Club.viewAllMatches(clubId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "All Admin Matches retrieved successfully",
+                        data: allMatches,
+                    });
+                } catch (error) {
+                    console.error("Error viewing all matches:", error);
+                    if (error.message === "Club not found") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
             }
-          }
-  
-          // Check if decoded token matches clubId from request body
-          if (decoded.clubId != clubId) {
-            return res.status(403).json({
-              status: "failed",
-              message: "Unauthorized access"
-            });
-          }
-  
-          // Token is valid, proceed to fetch all admin matches
-          try {
-            const allMatches = await Club.viewAllMatches(clubId);
-            return res.status(200).json({
-              status: "success",
-              message: "All Admin Matches retrieved successfully",
-              data: allMatches,
-            });
-          } catch (error) {
-            console.error("Error viewing all matches:", error);
-            if (error.message === "Club not found") {
-              return res.status(422).json({
-                status: "error",
-                error: error.message
-              });
-            }
-            return res.status(500).json({
-              status: "error",
-              message: "Internal server error",
-              error: error.message,
-            });
-          }
-        }
-      );
+        );
     } catch (error) {
-      console.error("Error verifying token:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Internal server error",
-        error: error.message,
-      });
+        console.error("Error verifying token:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
     }
-  };
+};
 //
 //
 //
@@ -2597,7 +2594,207 @@ exports.viewAllMatchPoints = async (req, res) => {
         });
     }
 };
+//
+//
+//
+//
+//
+// CLUB VIEW ALL NEWS
+exports.viewAllNews = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { clubId } = req.body;
 
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if clubId is missing
+        if (!clubId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Club ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_CLUB,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                try {
+                    // Check if decoded token matches clubId from request body
+                    if (decoded.clubId != clubId) {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Unauthorized access"
+                        });
+                    }
+
+                    const allNewsData = await Club.viewAllNews(clubId);
+                    return res.status(200).json({
+                        status: "success",
+                        message: "All club news retrieved successfully",
+                        data: allNewsData,
+                    });
+                } catch (error) {
+                    console.error("Error viewing all club news:", error);
+
+                    if (error.message === "Club not found, inactive, or suspended") {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    }
+
+                    return res.status(500).json({
+                        status: "error",
+                        message: "Internal server error",
+                        error: error.message,
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error during viewAllClubNews:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
+//
+//
+//
+// CLUB VIEW ONE NEWS
+exports.viewOneNews = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { clubId, footballNewsId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if clubId is missing
+        if (!clubId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Club ID is missing"
+            });
+        }
+
+        // Check if footballNewsId is missing
+        if (!footballNewsId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Football News ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_CLUB,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                try {
+                    // Check if decoded token matches clubId from request body
+                    if (decoded.clubId != clubId) {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Unauthorized access"
+                        });
+                    }
+
+                    const newsItemData = await Club.viewOneNews(
+                        footballNewsId,
+                        clubId
+                    );
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Football news retrieved successfully",
+                        data: newsItemData,
+                    });
+                } catch (error) {
+                    console.error("Error viewing one football news:", error);
+                    if (
+                        error.message === "Football news not found" ||
+                        error.message === "Club not found"
+                    ) {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error during viewOneFootballNews:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
 
 
 

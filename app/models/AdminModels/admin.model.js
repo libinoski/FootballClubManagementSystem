@@ -238,6 +238,73 @@ Admin.addNews = async (adminId, newFootballNews) => {
 //
 //
 //
+// ADMIN VIEW ALL NEWS
+Admin.viewAllNews = async (adminId) => {
+  try {
+    const checkAdminQuery = `
+            SELECT adminId
+            FROM Admins
+            WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+    const adminCheckResult = await dbQuery(checkAdminQuery, [adminId]);
+
+    if (adminCheckResult.length === 0) {
+      throw new Error("Admin not found or inactive");
+    }
+
+    const viewAllNewsQuery = `
+            SELECT * FROM FootballNews
+            WHERE deleteStatus = 0
+            ORDER BY addedDate DESC
+        `;
+    const allNews = await dbQuery(viewAllNewsQuery);
+
+    return allNews;
+  } catch (error) {
+    console.error("Error viewing all football news:", error);
+    throw error;
+  }
+};
+//
+//
+//
+//
+//
+// ADMIN VIEW ONE NEWS
+Admin.viewOneNews = async (footballNewsId, adminId) => {
+  try {
+    const verifyAdminQuery = `
+            SELECT adminId
+            FROM Admins
+            WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+    const adminResult = await dbQuery(verifyAdminQuery, [adminId]);
+
+    if (adminResult.length === 0) {
+      throw new Error("Admin not found");
+    }
+
+    const query = `
+            SELECT * FROM FootballNews
+            WHERE footballNewsId = ? AND deleteStatus = 0
+        `;
+    const result = await dbQuery(query, [footballNewsId]);
+
+    if (result.length === 0) {
+      throw new Error("Football news not found");
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error("Error fetching football news:", error);
+    throw error;
+  }
+};
+//
+//
+//
+//
+//
 // ADMIN ADD MATCH
 Admin.addMatch = async (adminId, matchData) => {
   try {

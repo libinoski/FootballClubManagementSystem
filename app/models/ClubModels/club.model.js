@@ -882,6 +882,76 @@ Club.viewAllMatchPoints = async (clubId) => {
       throw error;
     }
   };
+//
+//
+//
+//
+//
+// CLUB VIEW ALL NEWS
+Club.viewAllNews = async (clubId) => {
+    try {
+      const checkClubQuery = `
+              SELECT clubId
+              FROM Clubs
+              WHERE clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0
+          `;
+      const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
+  
+      if (clubCheckResult.length === 0) {
+        throw new Error("Club not found, inactive, or suspended");
+      }
+  
+      const viewAllNewsQuery = `
+              SELECT * FROM FootballNews
+              WHERE deleteStatus = 0
+              ORDER BY addedDate DESC
+          `;
+      const allNews = await dbQuery(viewAllNewsQuery);
+  
+      return allNews;
+    } catch (error) {
+      console.error("Error viewing all football news:", error);
+      throw error;
+    }
+  };
+//
+//
+//
+//
+//
+// CLUB VIEW ONE NEWS
+Club.viewOneNews = async (footballNewsId, clubId) => {
+    try {
+      const verifyClubQuery = `
+              SELECT clubId
+              FROM Clubs
+              WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
+          `;
+      const clubResult = await dbQuery(verifyClubQuery, [clubId]);
+  
+      if (clubResult.length === 0) {
+        throw new Error("Club not found or suspended");
+      }
+  
+      const query = `
+              SELECT * FROM FootballNews
+              WHERE footballNewsId = ? AND deleteStatus = 0
+          `;
+      const result = await dbQuery(query, [footballNewsId]);
+  
+      if (result.length === 0) {
+        throw new Error("Football news not found");
+      }
+  
+      return result[0];
+    } catch (error) {
+      console.error("Error fetching football news:", error);
+      throw error;
+    }
+  };
+  
+  
+  
   
 
 

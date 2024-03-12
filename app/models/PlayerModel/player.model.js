@@ -523,8 +523,74 @@ Player.viewAllMatchPoints = async (playerId) => {
       throw error;
     }
   };
+//
+//
+//
+//
+//
+// PLAYER VIEW ALL NEWS
+Player.viewAllNews = async (playerId) => {
+    try {
+      const checkPlayerQuery = `
+              SELECT playerId
+              FROM Players
+              WHERE playerId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0
+          `;
+      const playerCheckResult = await dbQuery(checkPlayerQuery, [playerId]);
   
-
+      if (playerCheckResult.length === 0) {
+        throw new Error("Player not found, inactive, or suspended");
+      }
+  
+      const viewAllNewsQuery = `
+              SELECT * FROM FootballNews
+              WHERE deleteStatus = 0
+              ORDER BY addedDate DESC
+          `;
+      const allNews = await dbQuery(viewAllNewsQuery);
+  
+      return allNews;
+    } catch (error) {
+      console.error("Error viewing all football news:", error);
+      throw error;
+    }
+  };
+//
+//
+//
+//
+//
+// PLAYER VIEW ONE NEWS
+Player.viewOneNews = async (footballNewsId, playerId) => {
+    try {
+      const verifyPlayerQuery = `
+              SELECT playerId
+              FROM Players
+              WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
+          `;
+      const playerResult = await dbQuery(verifyPlayerQuery, [playerId]);
+  
+      if (playerResult.length === 0) {
+        throw new Error("Player not found or suspended");
+      }
+  
+      const query = `
+              SELECT * FROM FootballNews
+              WHERE footballNewsId = ? AND deleteStatus = 0
+          `;
+      const result = await dbQuery(query, [footballNewsId]);
+  
+      if (result.length === 0) {
+        throw new Error("Football news not found");
+      }
+  
+      return result[0];
+    } catch (error) {
+      console.error("Error fetching football news:", error);
+      throw error;
+    }
+  };
+  
 
 
 module.exports = { Player, Club };
