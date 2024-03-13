@@ -97,6 +97,8 @@ CREATE TABLE Matches (
     awayTeamImage VARCHAR(2000) NOT NULL,
     matchLocation VARCHAR(255) NOT NULL,
     matchPrize VARCHAR(50) NOT NULL,
+    teamOneTotalGoalsInMatch VARCHAR(2) DEFAULT 0 NOT NULL,
+    teamTwoTotalGoalsInMatch VARCHAR(2) DEFAULT 0 NOT NULL,
     matchDate VARCHAR(50) NOT NULL,
     endStatus INT DEFAULT 0 NOT NULL,
     deleteStatus INT DEFAULT 0 NOT NULL,
@@ -149,21 +151,5 @@ CREATE TABLE Leave_Request_To_Club (
     FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE
 );
 
-8. Points
-
-CREATE TABLE Points (
-    pointId INT PRIMARY KEY AUTO_INCREMENT,
-    adminId INT NOT NULL,
-    teamOneName VARCHAR(255) NOT NULL,
-    teamTwoName VARCHAR(255) NOT NULL,
-    teamOneImage VARCHAR(2000) NOT NULL,
-    teamTwoImage VARCHAR(2000) NOT NULL,
-    teamOneTotalGoalsInTheMatch INT NOT NULL,
-    teamTwoTotalGoalsInTheMatch INT NOT NULL,
-    deleteStatus INT DEFAULT 0 NOT NULL,
-    updateStatus INT DEFAULT 0 NOT NULL,
-    addedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (adminId) REFERENCES Admins(adminId) ON DELETE CASCADE
-);
 
 

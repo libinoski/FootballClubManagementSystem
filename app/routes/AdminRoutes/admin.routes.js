@@ -17,6 +17,8 @@ router.post("/adminAddMatch", AdminController.addMatch);
 router.post("/adminViewAllMatches", AdminController.viewAllMatches);
 router.post("/adminViewOneMatch", AdminController.viewOneMatch);
 router.post("/adminEndOneMatch", AdminController.endOneMatch);
+router.post("/adminAllEndedMatches", AdminController.viewAllEndedMatches);
+router.post("/adminViewOneEndedMatch", AdminController.viewOneEndedMatch);
 router.post("/adminAddMatchPoint", AdminController.addMatchPoint);
 router.post("/adminViewAllMatchPoints", AdminController.viewAllMatchPoints);
 

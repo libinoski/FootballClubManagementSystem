@@ -308,37 +308,27 @@ Admin.viewOneNews = async (footballNewsId, adminId) => {
 // ADMIN ADD MATCH
 Admin.addMatch = async (adminId, matchData) => {
   try {
-      // Check if the admin exists
-      const checkAdminQuery = "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
-      const [adminReslut] = await db.query(checkAdminQuery, [adminId]);
+    const checkAdminQuery = "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
+    const adminResult = await db.query(checkAdminQuery, [adminId]);
 
-      if (adminReslut.length === 0) {
-          throw new Error("Admin not found");
-      }
+    if (adminResult.length === 0) {
+      throw new Error("Admin not found");
+    }
 
-      // Insert match data into the database
-      const insertQuery = `
-          INSERT INTO Matches (adminId, matchName, homeTeamName, awayTeamName, homeTeamImage, awayTeamImage, matchLocation, matchPrize, matchDate)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      const values = [
-          adminId,
-          matchData.matchName,
-          matchData.homeTeamName,
-          matchData.awayTeamName,
-          matchData.homeTeamImage,
-          matchData.awayTeamImage,
-          matchData.matchLocation,
-          matchData.matchPrize,
-          matchData.matchDate
-      ];
-      const [insertMatchData] = await db.query(insertQuery, values);
+    const completeMatchData = {
+      adminId,
+      ...matchData,
+    };
 
-      // Return the ID of the added match
-      return insertMatchData.insertId;
+    const insertQuery = "INSERT INTO Matches SET ?";
+
+    const insertMatchResult = await db.query(insertQuery, completeMatchData);
+
+    console.log('insertMatchData', insertMatchResult);
+    return insertMatchResult.insertId;
   } catch (error) {
-      console.error("Error adding match:", error);
-      throw error;
+    console.error("Error adding match:", error);
+    throw error;
   }
 };
 //
@@ -348,20 +338,27 @@ Admin.addMatch = async (adminId, matchData) => {
 // ADMIN VIEW ALL MATCHES
 Admin.viewAllMatches = async (adminId) => {
   try {
-    // Check if adminId exists
-    const adminExistsQuery = "SELECT * FROM Admins WHERE adminId = ? AND deleteStatus = 0";
-    const adminExistsResult = await db.query(adminExistsQuery, [adminId]);
+    const checkAdminQuery = `
+            SELECT adminId
+            FROM Admins
+            WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+    const adminCheckResult = await dbQuery(checkAdminQuery, [adminId]);
 
-    if (adminExistsResult[0].count === 0) {
-      throw new Error("Admin not found");
+    if (adminCheckResult.length === 0) {
+      throw new Error("Admin not found or inactive");
     }
 
-    // Proceed to fetch matches
-    const query = "SELECT * FROM Matches WHERE endStatus = 0 AND deleteStatus = 0";
-    const matches = await db.query(query);
-    return matches;
+    const viewAllMatchQuery = `
+            SELECT * FROM Matches
+            WHERE deleteStatus = 0 AND endStatus = 0 
+            ORDER BY matchDate DESC
+        `;
+    const allMatches = await dbQuery(viewAllMatchQuery);
+
+    return allMatches;
   } catch (error) {
-    console.error("Error viewing all matches:", error);
+    console.error("Error viewing all football matches:", error);
     throw error;
   }
 };
@@ -370,31 +367,32 @@ Admin.viewAllMatches = async (adminId) => {
 //
 //
 // ADMIN VIEW ONE MATCH
-Admin.viewOneMatch = async (adminId, matchId) => {
+Admin.viewOneMatch = async (matchId, adminId) => {
   try {
-    // Check if adminId exists
-    const adminExistsQuery = "SELECT * FROM Admins WHERE adminId = ? AND deleteStatus = 0";
-    const adminExistsResult = await db.query(adminExistsQuery, [adminId]);
+    const verifyAdminQuery = `
+            SELECT adminId
+            FROM Admins
+            WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+    const adminResult = await dbQuery(verifyAdminQuery, [adminId]);
 
-    if (adminExistsResult[0].count === 0) {
+    if (adminResult.length === 0) {
       throw new Error("Admin not found");
     }
 
-    // Query to fetch the match details based on matchId
-    const query = "SELECT * FROM Matches WHERE matchId = ? AND deleteStatus = 0";
-    
-    // Execute the query
-    const match = await db.query(query, [matchId]);
+    const query = `
+            SELECT * FROM Matches
+            WHERE matchId = ? AND deleteStatus = 0  AND endStatus = 0 
+        `;
+    const result = await dbQuery(query, [matchId]);
 
-    // Check if match is found
-    if (match.length === 0) {
+    if (result.length === 0) {
       throw new Error("Match not found");
     }
 
-    // Return the match details
-    return match[0];
+    return result[0];
   } catch (error) {
-    console.error("Error viewing one match:", error);
+    console.error("Error fetching football match:", error);
     throw error;
   }
 };
@@ -405,15 +403,16 @@ Admin.viewOneMatch = async (adminId, matchId) => {
 // ADMIN END MATCH
 Admin.endOneMatch = async (adminId, matchId) => {
   try {
-    // Check if the admin exists
-    const checkAdminQuery =
-      "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
-    const [adminResult] = await db.query(checkAdminQuery, [adminId]);
+    const verifyAdminQuery = `
+            SELECT adminId
+            FROM Admins
+            WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+    const adminResult = await dbQuery(verifyAdminQuery, [adminId]);
 
     if (adminResult.length === 0) {
       throw new Error("Admin not found");
     }
-
     // Update endStatus field of the match
     const updateQuery = `
       UPDATE Matches
@@ -421,9 +420,7 @@ Admin.endOneMatch = async (adminId, matchId) => {
       WHERE matchId = ? AND deleteStatus = 0
     `;
     await db.query(updateQuery, [matchId]);
-
-    console.log("Match ended successfully for matchId:", matchId);
-    return { message: "Match ended successfully" };
+    return true;
   } catch (error) {
     console.error("Error ending match:", error);
     throw error;
@@ -433,38 +430,96 @@ Admin.endOneMatch = async (adminId, matchId) => {
 //
 //
 //
-// ADMIN ADD MATCH POINT
-Admin.addMatchPoint = async (adminId, matchData) => {
+// ADMIN VIEW ALL ENDED MATCHES
+Admin.viewAllEndedMatches = async (adminId) => {
   try {
-      // Check if the admin exists
-      const checkAdminQuery = "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
-      const [adminResult] = await db.query(checkAdminQuery, [adminId]);
+    const checkAdminQuery = `
+            SELECT adminId
+            FROM Admins
+            WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+    const adminCheckResult = await dbQuery(checkAdminQuery, [adminId]);
 
-      if (adminResult.length === 0) {
-          throw new Error("Admin not found");
-      }
+    if (adminCheckResult.length === 0) {
+      throw new Error("Admin not found or inactive");
+    }
 
-      // Insert match data into the database
-      const insertQuery = `
-          INSERT INTO Points (adminId, teamOneName, teamTwoName, teamOneImage, teamTwoImage, teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-      `;
-      const values = [
-          adminId,
-          matchData.teamOneName,
-          matchData.teamTwoName,
-          matchData.teamOneImage,
-          matchData.teamTwoImage,
-          matchData.teamOneTotalGoalsInTheMatch,
-          matchData.teamTwoTotalGoalsInTheMatch
-      ];
-      const [insertMatchData] = await db.query(insertQuery, values);
+    const viewAllEndedMatchQuery = `
+            SELECT * FROM Matches
+            WHERE deleteStatus = 0 AND endStatus = 1 
+            ORDER BY matchDate DESC
+        `;
+    const allEndedMatches = await dbQuery(viewAllEndedMatchQuery);
 
-      // Return the ID of the added match
-      return insertMatchData.insertId;
+    return allEndedMatches;
   } catch (error) {
-      console.error("Error adding match:", error);
-      throw error;
+    console.error("Error viewing all ended football matches:", error);
+    throw error;
+  }
+};
+//
+//
+//
+//
+// ADMIN VIEW ONE MATCH
+Admin.viewOneEndedMatch = async (matchId, adminId) => {
+  try {
+    const verifyAdminQuery = `
+            SELECT adminId
+            FROM Admins
+            WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+    const adminResult = await dbQuery(verifyAdminQuery, [adminId]);
+
+    if (adminResult.length === 0) {
+      throw new Error("Admin not found");
+    }
+
+    const query = `
+            SELECT * FROM Matches
+            WHERE matchId = ? AND deleteStatus = 0  AND endStatus = 1 
+        `;
+    const result = await dbQuery(query, [matchId]);
+
+    if (result.length === 0) {
+      throw new Error("Match not found");
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error("Error fetching ended football match:", error);
+    throw error;
+  }
+};
+//
+//
+//
+//
+// ADMIN ADD MATCH POINT
+Admin.addMatchPoint = async (adminId, matchId, pointData) => {
+  try {
+    const checkAdminQuery =
+      "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
+    const adminResult = await dbQuery(checkAdminQuery, [adminId]);
+
+    if (adminResult.length === 0) {
+      throw new Error("Admin not found");
+    }
+
+    const completePointData = {
+      adminId,
+      matchId,
+      ...pointData,
+    };
+
+    const insertQuery = "INSERT INTO Matches SET ?";
+    const insertMatchResult = await dbQuery(insertQuery, completePointData);
+
+    console.log('insertMatchData', insertMatchResult);
+    return insertMatchResult.insertId;
+  } catch (error) {
+    console.error("Error adding match:", error);
+    throw error;
   }
 };
 //
@@ -482,14 +537,9 @@ Admin.viewAllMatchPoints = async (adminId) => {
       throw new Error("Admin not found");
     }
 
-    // Query to fetch all match points, ordered by addedDate
-    const query = `
-      SELECT pointId, teamOneName, teamTwoName, teamOneImage, teamTwoImage,
-             teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch, addedDate
-      FROM Points
-      ORDER BY addedDate DESC
-    `;
-    
+    // Query to fetch all columns from Matches table, ordered by matchDate in ascending order
+    const query = `SELECT * FROM Matches ORDER BY matchDate ASC`;
+
     // Execute the query
     const matchPoints = await dbQuery(query);
 
