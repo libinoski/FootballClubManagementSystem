@@ -31,179 +31,186 @@ const s3Client = new S3Client({
 //
 //
 // ADMIN REGISTER
-exports.registration = async (req, res) => {
-    const uploadAdminImage = multer({
-        storage: multer.memoryStorage(),
-    }).single("adminImage");
+// exports.registration = async (req, res) => {
+//     const uploadAdminImage = multer({
+//         storage: multer.memoryStorage(),
+//     }).single("adminImage");
 
-    uploadAdminImage(req, res, async function (err) {
-        if (err) {
-            return res.status(400).json({
-                status: "failed",
-                message: "Validation failed",
-                results: { file: "File upload failed", details: err.message },
-            });
-        }
+//     uploadAdminImage(req, res, async function (err) {
+//         if (err) {
+//             return res.status(400).json({
+//                 status: "failed",
+//                 message: "Validation failed",
+//                 results: { file: "File upload failed", details: err.message },
+//             });
+//         }
 
-        const adminData = req.body;
-        const adminImageFile = req.file ? req.file : null;
-
-
-        const validationResults = validateAdminRegistration(adminData, adminImageFile);
-
-        if (!validationResults.isValid) {
-            return res.status(400).json({
-                status: "failed",
-                message: "Validation failed",
-                results: validationResults.errors,
-            });
-        }
-
-        if (adminImageFile) {
-            const fileName = `adminImage-${Date.now()}${path.extname(adminImageFile.originalname)}`;
-            const mimeType = adminImageFile.mimetype;
-
-            try {
-                const fileLocation = await uploadFileToS3(adminImageFile.buffer, fileName, mimeType);
-                adminData.adminImage = fileLocation;
-            } catch (uploadError) {
-                return res.status(500).json({
-                    status: "failed",
-                    message: "Internal server error",
-                    error: uploadError.message,
-                });
-            }
-        }
-
-        try {
-            const registrationResponse = await Admin.registration(adminData);
-            // Setup email content
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: registrationResponse.adminEmail, // Assuming email is part of the response
-                subject: "Your Registration Details",
-                text: `Dear ${registrationResponse.adminName},
-
-Welcome to Ajay's Football Club Management System!
-
-Congratulations on successfully registering as an admin. With our system, you can efficiently manage all aspects of the football club's operations, from player registrations to match scheduling.
-
-We're here to support you every step of the way. If you have any questions or need assistance, don't hesitate to reach out to our team.
-
-Thank you for choosing Ajay's Football Club Management System. Let's work together to lead the team to success on and off the pitch!
-
-Best regards,
-Ajay Kumar MA
-Admin 
-Football club
-`,
-            };
-
-            // Send email
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error("Error sending email: ", error);
-                    // Optionally handle email sending error, e.g., log or notify admin
-                } else {
-                    console.log("Email sent: " + info.response);
-                }
-            });
-
-            return res.status(200).json({
-                status: "success",
-                message: "Admin registered successfully",
-                data: registrationResponse,
-            });
-        } catch (error) {
-
-            // Delete uploaded image from S3 if it exists
-            if (adminData.adminImage) {
-                const s3Key = adminData.adminImage.split('/').pop();
-                const params = {
-                    Bucket: process.env.S3_BUCKET_NAME,
-                    Key: `adminImages/${s3Key}`
-                };
-                try {
-                    await s3Client.send(new DeleteObjectCommand(params));
-                } catch (s3Error) {
-                    console.error("Error deleting image from S3:", s3Error);
-                }
-            }
-
-            if (error.name === "ValidationError") {
-                return res.status(422).json({
-                    status: "failed",
-                    message: "Validation error during registration",
-                    error: error.errors,
-                });
-            } else {
-                return res.status(500).json({
-                    status: "failed",
-                    message: "Internal server error during registration",
-                    error: error.message,
-                });
-            }
-        }
-    });
-
-    async function uploadFileToS3(fileBuffer, fileName, mimeType) {
-        const uploadParams = {
-            Bucket: process.env.S3_BUCKET_NAME,
-            Key: `adminImages/${fileName}`,
-            Body: fileBuffer.buffer,
-            ACL: "public-read",
-            ContentType: mimeType,
-        };
-
-        const command = new PutObjectCommand(uploadParams);
-        await s3Client.send(command);
-        return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
-    }
-
-    function validateAdminRegistration(adminData, adminImageFile) {
-        const validationResults = {
-            isValid: true,
-            errors: {},
-        };
-
-        // Name validation
-        const nameValidation = dataValidator.isValidName(adminData.adminName);
-        if (!nameValidation.isValid) {
-            validationResults.isValid = false;
-            validationResults.errors["adminName"] = [nameValidation.message];
-        }
-
-        // Email validation
-        const emailValidation = dataValidator.isValidEmail(adminData.adminEmail);
-        if (!emailValidation.isValid) {
-            validationResults.isValid = false;
-            validationResults.errors["adminEmail"] = [emailValidation.message];
-        }
+//         const adminData = req.body;
+//         const adminImageFile = req.file ? req.file : null;
 
 
-        // Address validation
-        const addressValidation = dataValidator.isValidAddress(adminData.adminAddress);
-        if (!addressValidation.isValid) {
-            validationResults.isValid = false;
-            validationResults.errors["adminAddress"] = [addressValidation.message];
-        }
+//         const validationResults = validateAdminRegistration(adminData, adminImageFile);
 
-        const imageValidation = dataValidator.isValidImageWith1MBConstraint(adminImageFile);
-        if (!imageValidation.isValid) {
-            validationResults.isValid = false;
-            validationResults.errors["adminImage"] = [imageValidation.message];
-        }
+//         if (!validationResults.isValid) {
+//             return res.status(400).json({
+//                 status: "failed",
+//                 message: "Validation failed",
+//                 results: validationResults.errors,
+//             });
+//         }
 
-        // Password validation
-        const mobileValidation = dataValidator.isValidMobileNumber(adminData.adminMobile);
-        if (!mobileValidation.isValid) {
-            validationResults.isValid = false;
-            validationResults.errors["adminPassword"] = [mobileValidation.message];
-        }
+//         if (adminImageFile) {
+//             const fileName = `adminImage-${Date.now()}${path.extname(adminImageFile.originalname)}`;
+//             const mimeType = adminImageFile.mimetype;
 
-        return validationResults;
-    }
-};
+//             try {
+//                 const fileLocation = await uploadFileToS3(adminImageFile.buffer, fileName, mimeType);
+//                 adminData.adminImage = fileLocation;
+//             } catch (uploadError) {
+//                 return res.status(500).json({
+//                     status: "failed",
+//                     message: "Internal server error",
+//                     error: uploadError.message,
+//                 });
+//             }
+//         }
+
+//         try {
+//             const registrationResponse = await Admin.registration(adminData);
+//             // Setup email content
+//             const mailOptions = {
+//                 from: process.env.EMAIL_USER,
+//                 to: registrationResponse.adminEmail, // Assuming email is part of the response
+//                 subject: "Your Registration Details",
+//                 text: `Dear ${registrationResponse.adminName},
+
+// Welcome to Ajay's Football Club Management System!
+
+// Congratulations on successfully registering as an admin. With our system, you can efficiently manage all aspects of the football club's operations, from player registrations to match scheduling.
+
+// We're here to support you every step of the way. If you have any questions or need assistance, don't hesitate to reach out to our team.
+
+// Thank you for choosing Ajay's Football Club Management System. Let's work together to lead the team to success on and off the pitch!
+
+// Best regards,
+// Ajay Kumar MA
+// Admin 
+// Football club
+// `,
+//             };
+
+//             // Send email
+//             transporter.sendMail(mailOptions, (error, info) => {
+//                 if (error) {
+//                     console.error("Error sending email: ", error);
+//                     // Optionally handle email sending error, e.g., log or notify admin
+//                 } else {
+//                     console.log("Email sent: " + info.response);
+//                 }
+//             });
+
+//             return res.status(200).json({
+//                 status: "success",
+//                 message: "Admin registered successfully",
+//                 data: registrationResponse,
+//             });
+//         } catch (error) {
+
+//             // Delete uploaded image from S3 if it exists
+//             if (adminData.adminImage) {
+//                 const s3Key = adminData.adminImage.split('/').pop();
+//                 const params = {
+//                     Bucket: process.env.S3_BUCKET_NAME,
+//                     Key: `adminImages/${s3Key}`
+//                 };
+//                 try {
+//                     await s3Client.send(new DeleteObjectCommand(params));
+//                 } catch (s3Error) {
+//                     console.error("Error deleting image from S3:", s3Error);
+//                 }
+//             }
+
+//             if (error.name === "ValidationError") {
+//                 return res.status(422).json({
+//                     status: "failed",
+//                     message: "Validation error during registration",
+//                     error: error.errors,
+//                 });
+//             } else {
+//                 return res.status(500).json({
+//                     status: "failed",
+//                     message: "Internal server error during registration",
+//                     error: error.message,
+//                 });
+//             }
+//         }
+//     });
+
+//     async function uploadFileToS3(fileBuffer, fileName, mimeType) {
+//         const uploadParams = {
+//             Bucket: process.env.S3_BUCKET_NAME,
+//             Key: `adminImages/${fileName}`,
+//             Body: fileBuffer.buffer,
+//             ACL: "public-read",
+//             ContentType: mimeType,
+//         };
+
+//         const command = new PutObjectCommand(uploadParams);
+//         await s3Client.send(command);
+//         return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uploadParams.Key}`;
+//     }
+
+//     function validateAdminRegistration(adminData, adminImageFile) {
+//         const validationResults = {
+//             isValid: true,
+//             errors: {},
+//         };
+
+//         // Name validation
+//         const nameValidation = dataValidator.isValidName(adminData.adminName);
+//         if (!nameValidation.isValid) {
+//             validationResults.isValid = false;
+//             validationResults.errors["adminName"] = [nameValidation.message];
+//         }
+
+//         // Email validation
+//         const emailValidation = dataValidator.isValidEmail(adminData.adminEmail);
+//         if (!emailValidation.isValid) {
+//             validationResults.isValid = false;
+//             validationResults.errors["adminEmail"] = [emailValidation.message];
+//         }
+
+
+//         // Address validation
+//         const addressValidation = dataValidator.isValidAddress(adminData.adminAddress);
+//         if (!addressValidation.isValid) {
+//             validationResults.isValid = false;
+//             validationResults.errors["adminAddress"] = [addressValidation.message];
+//         }
+
+//         const imageValidation = dataValidator.isValidImageWith1MBConstraint(adminImageFile);
+//         if (!imageValidation.isValid) {
+//             validationResults.isValid = false;
+//             validationResults.errors["adminImage"] = [imageValidation.message];
+//         }
+
+//         const mobileValidation = dataValidator.isValidMobileNumber(adminData.adminMobile);
+//         if (!mobileValidation.isValid) {
+//             validationResults.isValid = false;
+//             validationResults.errors["adminMobile"] = [mobileValidation.message];
+//         }
+
+
+//         const passwordValidation = dataValidator.isValidPassword(adminData.adminPassword);
+//         if (!passwordValidation.isValid) {
+//             validationResults.isValid = false;
+//             validationResults.errors["adminPassword"] = [passwordValidation.message];
+//         }
+
+
+//         return validationResults;
+//     }
+// };
 //
 //
 //
@@ -777,7 +784,7 @@ exports.addNews = async (req, res) => {
         );
         if (!titleValidation.isValid) {
             validationResults.isValid = false;
-            validationResults.errors["NewsTitle"] =
+            validationResults.errors["footballNewsTitle"] =
                 titleValidation.message;
         }
 
@@ -786,7 +793,7 @@ exports.addNews = async (req, res) => {
         );
         if (!contentValidation.isValid) {
             validationResults.isValid = false;
-            validationResults.errors["NewsContent"] =
+            validationResults.errors["footballNewsContent"] =
                 contentValidation.message;
         }
 

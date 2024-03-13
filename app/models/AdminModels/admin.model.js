@@ -22,36 +22,36 @@ const Admin = function (admin) {
 //
 //
 // ADMIN REGISTER
-Admin.registration = async (adminData) => {
-  try {
-    const checkEmailQuery =
-      "SELECT * FROM Admins WHERE adminEmail = ? AND deleteStatus=0 AND isActive=1";
+// Admin.registration = async (adminData) => {
+//   try {
+//     const checkEmailQuery =
+//       "SELECT * FROM Admins WHERE adminEmail = ? AND deleteStatus=0 AND isActive=1";
 
-    const errors = {};
+//     const errors = {};
 
-    // Check if email already exists
-    const emailRes = await dbQuery(checkEmailQuery, [adminData.adminEmail]);
-    if (emailRes.length > 0) {
-      errors["Email"] = ["Email already exists"];
-    }
+//     // Check if email already exists
+//     const emailRes = await dbQuery(checkEmailQuery, [adminData.adminEmail]);
+//     if (emailRes.length > 0) {
+//       errors["Email"] = ["Email already exists"];
+//     }
 
-    if (Object.keys(errors).length > 0) {
-      throw { name: "ValidationError", errors: errors };
-    }
+//     if (Object.keys(errors).length > 0) {
+//       throw { name: "ValidationError", errors: errors };
+//     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(adminData.adminPassword, 10);
-    adminData.adminPassword = hashedPassword;
+//     // Hash the password
+//     const hashedPassword = await bcrypt.hash(adminData.adminPassword, 10);
+//     adminData.adminPassword = hashedPassword;
 
-    const insertQuery = "INSERT INTO Admins SET ?";
-    const insertRes = await dbQuery(insertQuery, adminData);
+//     const insertQuery = "INSERT INTO Admins SET ?";
+//     const insertRes = await dbQuery(insertQuery, adminData);
 
-    return { adminId: insertRes.insertId, ...adminData };
-  } catch (error) {
-    console.error("Error during admin registration in model:", error);
-    throw error;
-  }
-};
+//     return { adminId: insertRes.insertId, ...adminData };
+//   } catch (error) {
+//     console.error("Error during admin registration in model:", error);
+//     throw error;
+//   }
+// };
 //
 //
 //

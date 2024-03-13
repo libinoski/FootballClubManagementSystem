@@ -458,7 +458,7 @@ function isValidCost(cost) {
     };
 }
 
-// Validate goals (maximum 2 characters, not null)
+// Validate goals (at least one character, maximum 2 characters, not null)
 function isValidGoals(goals) {
     if (isNullOrUndefined(goals)) {
         return {
@@ -469,10 +469,10 @@ function isValidGoals(goals) {
 
     const goalsString = goals.toString().trim();
 
-    if (goalsString.length > 2) {
+    if (goalsString.length === 0 || goalsString.length > 2) {
         return {
             isValid: false,
-            message: "Goals cannot exceed two characters."
+            message: "Goals should have at least one character and cannot exceed two characters."
         };
     }
 
