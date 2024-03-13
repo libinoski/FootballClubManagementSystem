@@ -1872,75 +1872,83 @@ exports.viewOneEndedMatch = async (req, res) => {
 //
 //
 //
-// ADMIN ADD MATCH
+// ADMIN ADD MATCH POINT
 exports.addMatchPoint = async (req, res) => {
     const token = req.headers.token;
     const { adminId, matchId, teamOneTotalGoalsInMatch, teamTwoTotalGoalsInMatch } = req.body;
   
     if (!token) {
-      return res.status(403).json({
-        status: "failed",
-        message: "Token is missing"
-      });
+        return res.status(403).json({
+            status: "failed",
+            message: "Token is missing"
+        });
     }
   
     if (!adminId) {
-      return res.status(401).json({
-        status: "failed",
-        message: "Admin ID is missing"
-      });
+        return res.status(401).json({
+            status: "failed",
+            message: "Admin ID is missing"
+        });
     }
   
     if (!matchId) {
-      return res.status(401).json({
-        status: "failed",
-        message: "Match ID is missing"
-      });
+        return res.status(401).json({
+            status: "failed",
+            message: "Match ID is missing"
+        });
     }
   
     jwt.verify(token, process.env.JWT_SECRET_KEY_ADMIN, async (err, decoded) => {
-      if (err) {
-        console.error("JWT Verification Error:", err);
-        return res.status(403).json({
-          status: "error",
-          message: "Invalid or expired token"
-        });
-      }
+        if (err) {
+            console.error("JWT Verification Error:", err);
+            return res.status(403).json({
+                status: "error",
+                message: "Invalid or expired token"
+            });
+        }
   
-      if (decoded.adminId != adminId) {
-        console.error("Unauthorized access");
-        return res.status(403).json({
-          status: "error",
-          message: "Unauthorized access"
-        });
-      }
+        if (decoded.adminId != adminId) {
+            console.error("Unauthorized access");
+            return res.status(403).json({
+                status: "error",
+                message: "Unauthorized access"
+            });
+        }
   
-      const pointData = {
-        teamOneTotalGoalsInMatch,
-        teamTwoTotalGoalsInMatch,
-      };
+        const pointData = {
+            teamOneTotalGoalsInMatch,
+            teamTwoTotalGoalsInMatch,
+        };
   
-      try {
-        const addedMatchId = await Admin.addMatchPoint(adminId, matchId, pointData);
+        try {
+            await Admin.addMatchPoint(adminId, matchId, pointData);
   
-        return res.status(200).json({
-          status: "success",
-          message: "Match point added successfully",
-          data: {
-            matchId: addedMatchId,
-            ...pointData
-          }
-        });
-      } catch (error) {
-        console.error("Error during adding match point:", error);
-        return res.status(500).json({
-          status: "error",
-          message: "Internal server error",
-          error: error.message,
-        });
-      }
+            return res.status(200).json({
+                status: "success",
+                message: "Match point added successfully",
+                data: {
+                    matchId,
+                    ...pointData
+                }
+            });
+        } catch (error) {
+            if (error.message === "Admin not found or inactive") {
+                return res.status(422).json({
+                    status: "error",
+                    error: error.message
+                });
+            } else {
+                console.error("Error during adding match point:", error);
+                return res.status(500).json({
+                    status: "error",
+                    message: "Internal server error",
+                    error: error.message,
+                });
+            }
+        }
     });
-  };
+};
+
 //
 //
 //

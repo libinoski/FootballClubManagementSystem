@@ -527,30 +527,24 @@ Admin.viewOneEndedMatch = async (matchId, adminId) => {
 // ADMIN ADD MATCH POINT
 Admin.addMatchPoint = async (adminId, matchId, pointData) => {
   try {
+    // Check if the admin exists and is active
     const checkAdminQuery =
       "SELECT * FROM Admins WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0";
     const adminResult = await dbQuery(checkAdminQuery, [adminId]);
 
     if (adminResult.length === 0) {
-      throw new Error("Admin not found");
+      throw new Error("Admin not found or inactive");
     }
 
-    const completePointData = {
-      adminId,
-      matchId,
-      ...pointData,
-    };
-
-    const insertQuery = "INSERT INTO Matches SET ?";
-    const insertMatchResult = await dbQuery(insertQuery, completePointData);
-
-    console.log('insertMatchData', insertMatchResult);
-    return insertMatchResult.insertId;
+    // Update the match point data
+    const updateQuery = "UPDATE Matches SET ? WHERE matchId = ?";
+    await dbQuery(updateQuery, [pointData, matchId]);
   } catch (error) {
-    console.error("Error adding match:", error);
+    console.error("Error updating match point:", error);
     throw error;
   }
 };
+
 //
 //
 //
