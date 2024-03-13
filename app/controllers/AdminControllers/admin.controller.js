@@ -1089,14 +1089,12 @@ exports.deleteOneNews = async (req, res) => {
                         });
                     }
 
-                    const newsItemData = await Admin.deleteOneNews(
-                        footballNewsId,
-                        adminId
-                    );
+                    const newsDeleted = await Admin.deleteOneNews(adminId, footballNewsId);
+
                     return res.status(200).json({
                         status: "success",
                         message: "Football news deleted successfully",
-                        data: newsItemData,
+                        data: newsDeleted,
                     });
                 } catch (error) {
                     console.error("Error viewing one football news:", error);
