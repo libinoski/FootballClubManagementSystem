@@ -304,6 +304,35 @@ Admin.viewOneNews = async (footballNewsId, adminId) => {
 //
 //
 //
+// ADMIN DELETE ONE NEWS
+Admin.deleteOneNews = async (adminId, footballNewsId) => {
+  try {
+    const verifyAdminQuery = `
+            SELECT adminId
+            FROM Admins
+            WHERE adminId = ? AND isActive = 1 AND deleteStatus = 0
+        `;
+    const adminResult = await dbQuery(verifyAdminQuery, [adminId]);
+
+    if (adminResult.length === 0) {
+      throw new Error("Admin not found");
+    }
+    // Update endStatus field of the match
+    const updateQuery = `
+      UPDATE FootballNews
+      SET deleteStatus = 1
+      WHERE footballNewsId = ?
+    `;
+    await db.query(updateQuery, [footballNewsId]);
+    return true;
+  } catch (error) {
+    console.error("Error deleting news:", error);
+    throw error;
+  }
+};
+//
+//
+//
 //
 // ADMIN ADD MATCH
 Admin.addMatch = async (adminId, matchData) => {

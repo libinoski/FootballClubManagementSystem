@@ -1026,6 +1026,111 @@ exports.viewOneNews = async (req, res) => {
 //
 //
 //
+// ADMIN DELETE ONE NEWS
+exports.deleteOneNews = async (req, res) => {
+    try {
+        const token = req.headers.token;
+        const { adminId, footballNewsId } = req.body;
+
+        // Check if token is missing
+        if (!token) {
+            return res.status(403).json({
+                status: "failed",
+                message: "Token is missing"
+            });
+        }
+
+        // Check if adminId is missing
+        if (!adminId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Admin ID is missing"
+            });
+        }
+
+        // Check if footballNewsId is missing
+        if (!footballNewsId) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Football News ID is missing"
+            });
+        }
+
+        // Verifying the token
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET_KEY_ADMIN,
+            async (err, decoded) => {
+                if (err) {
+                    if (err.name === "JsonWebTokenError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Invalid token"
+                        });
+                    } else if (err.name === "TokenExpiredError") {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Token has expired"
+                        });
+                    } else {
+                        return res.status(403).json({
+                            status: "failed",
+                            message: "Unauthorized access"
+                        });
+                    }
+                }
+
+                try {
+                    // Check if decoded token matches adminId from request body
+                    if (decoded.adminId != adminId) {
+                        return res.status(403).json({
+                            status: "error",
+                            message: "Unauthorized access"
+                        });
+                    }
+
+                    const newsItemData = await Admin.deleteOneNews(
+                        footballNewsId,
+                        adminId
+                    );
+                    return res.status(200).json({
+                        status: "success",
+                        message: "Football news deleted successfully",
+                        data: newsItemData,
+                    });
+                } catch (error) {
+                    console.error("Error viewing one football news:", error);
+                    if (
+                        error.message === "Football news not found" ||
+                        error.message === "Admin not found"
+                    ) {
+                        return res.status(422).json({
+                            status: "error",
+                            error: error.message
+                        });
+                    } else {
+                        return res.status(500).json({
+                            status: "error",
+                            message: "Internal server error",
+                            error: error.message,
+                        });
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error("Error during delete one football news:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+//
+//
+//
+//
 // ADMIN ADD MATCH
 exports.addMatch = async (req, res) => {
     const token = req.headers.token;

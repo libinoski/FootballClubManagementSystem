@@ -13,6 +13,7 @@ router.post("/adminUpdateProfile", AdminController.updateProfile);
 router.post("/adminAddNews", AdminController.addNews);
 router.post("/adminViewAllNews", AdminController.viewAllNews);
 router.post("/adminViewOneNews", AdminController.viewOneNews);
+router.post("/adminDeleteOneNews", AdminController.deleteOneNews);
 router.post("/adminAddMatch", AdminController.addMatch);
 router.post("/adminViewAllMatches", AdminController.viewAllMatches);
 router.post("/adminViewOneMatch", AdminController.viewOneMatch);
