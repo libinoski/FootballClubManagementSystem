@@ -124,20 +124,16 @@ Player.registration = async (newPlayer, clubId) => {
 // PLAYER LOGIN
 Player.login = async (email, password) => {
     const query =
-        "SELECT * FROM Players WHERE playerEmail = ? AND isActive = 1 AND deleteStatus = 0";
+        "SELECT * FROM Players WHERE playerEmail = ? AND isActive = 1 AND deleteStatus = 0 AND isApproved = 1 AND isSuspended = 0";
 
     try {
         const result = await dbQuery(query, [email]);
 
         if (result.length === 0) {
-            throw new Error("Player not found");
-        }
-
-        const player = result[0];
-
-        if (player.isApproved === 0) {
             throw new Error("Your account is not yet approved. Please wait for approval");
         }
+
+        const player = result[0]; // Extracting player from the result
 
         const isMatch = await promisify(bcrypt.compare)(
             password,
@@ -154,7 +150,6 @@ Player.login = async (email, password) => {
         throw error;
     }
 };
-
 //
 //
 //

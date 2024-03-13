@@ -348,7 +348,14 @@ function isValidText(text) {
     if (isNullOrUndefined(text)) {
         return {
             isValid: false,
-            message: "Text cannot be null."
+            message: "Text cannot be null or undefined."
+        };
+    }
+
+    if (text.trim() === "") {
+        return {
+            isValid: false,
+            message: "Text cannot be empty."
         };
     }
 
@@ -364,6 +371,7 @@ function isValidText(text) {
         message: "Text is valid."
     };
 }
+
 
 
 // Verify the validity of a date in formats: dd/mm/yyyy, yyyy/mm/dd, dd-mm-yyyy, yyyy-mm-dd
@@ -450,6 +458,29 @@ function isValidCost(cost) {
     };
 }
 
+// Validate goals (maximum 2 characters, not null)
+function isValidGoals(goals) {
+    if (isNullOrUndefined(goals)) {
+        return {
+            isValid: false,
+            message: "Goals cannot be null."
+        };
+    }
+
+    const goalsString = goals.toString().trim();
+
+    if (goalsString.length > 2) {
+        return {
+            isValid: false,
+            message: "Goals cannot exceed two characters."
+        };
+    }
+
+    return {
+        isValid: true,
+        message: "Goals are valid."
+    };
+}
 
 
 // Export all validation functions
@@ -471,5 +502,6 @@ module.exports = {
     isValidText,
     isValidDate,
     isValidMessage,
-    isValidCost
+    isValidCost,
+    isValidGoals
 };

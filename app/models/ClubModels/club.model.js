@@ -278,7 +278,7 @@ Club.approveOnePlayer = async (clubId, playerId) => {
         const clubCheckQuery = "SELECT * FROM clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
         const clubCheckRes = await dbQuery(clubCheckQuery, [clubId]);
         if (clubCheckRes.length === 0) {
-            throw new Error("club not found");
+            throw new Error("Club not found");
         }
 
         // Validate existence and status of the Player
@@ -289,12 +289,12 @@ Club.approveOnePlayer = async (clubId, playerId) => {
         }
 
         // Approve the Player
-        const approveQuery = "UPDATE Players SET isApproved = 1 WHERE playerId = ? AND clubId = ?";
+        const approveQuery = "UPDATE Players SET isApproved = 1, isActive = 1 WHERE playerId = ? AND clubId = ?";
         await dbQuery(approveQuery, [playerId, clubId]);
 
         return playerId; // Return the approved playerId
     } catch (error) {
-        console.error("Error in approveplayer model:", error);
+        console.error("Error in approvePlayer model:", error);
         throw error;
     }
 };

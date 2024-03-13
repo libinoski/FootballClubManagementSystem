@@ -1914,6 +1914,39 @@ exports.addMatchPoint = async (req, res) => {
                 message: "Unauthorized access"
             });
         }
+
+        // Define validatePointData function locally
+        function validatePointData(teamOneTotalGoalsInMatch, teamTwoTotalGoalsInMatch) {
+            const validationResults = {
+                isValid: true,
+                errors: {},
+            };
+        
+            const teamOneValidation = dataValidator.isValidGoals(teamOneTotalGoalsInMatch);
+            if (!teamOneValidation.isValid) {
+                validationResults.isValid = false;
+                validationResults.errors["teamOneTotalGoalsInMatch"] = teamOneValidation.message;
+            }
+        
+            const teamTwoValidation = dataValidator.isValidGoals(teamTwoTotalGoalsInMatch);
+            if (!teamTwoValidation.isValid) {
+                validationResults.isValid = false;
+                validationResults.errors["teamTwoTotalGoalsInMatch"] = teamTwoValidation.message;
+            }
+        
+            return validationResults;
+        }
+
+        // Validate point data
+        const validationResults = validatePointData(teamOneTotalGoalsInMatch, teamTwoTotalGoalsInMatch);
+        if (!validationResults.isValid) {
+            console.error("Validation failed:", validationResults.errors);
+            return res.status(400).json({
+                status: "error",
+                message: "Validation failed",
+                results: validationResults.errors,
+            });
+        }
   
         const pointData = {
             teamOneTotalGoalsInMatch,
@@ -1948,6 +1981,7 @@ exports.addMatchPoint = async (req, res) => {
         }
     });
 };
+
 
 //
 //

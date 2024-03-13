@@ -271,6 +271,7 @@ Your Sports Club Team
 //
 //
 // PLAYER LOGIN
+// PLAYER LOGIN
 exports.login = async (req, res) => {
     const { playerEmail, playerPassword } = req.body;
 
@@ -326,21 +327,22 @@ exports.login = async (req, res) => {
     } catch (error) {
         console.error('Error during player login:', error);
 
-        if (error.message === 'player not found' || error.message === 'Wrong password' || error.message === 'Your account is not yet approved. Please wait for approval') {
+        if (error.message === 'Wrong password' || error.message === 'Your account is not yet approved. Please wait for approval') {
             return res.status(422).json({
                 status: 'failed',
                 message: 'Login failed',
                 error: error.message,
             });
+        } else {
+            return res.status(500).json({
+                status: 'failed',
+                message: 'Internal server error',
+                error: error.message,
+            });
         }
-
-        return res.status(500).json({
-            status: 'failed',
-            message: 'Internal server error',
-            error: error.message,
-        });
     }
 };
+
 //
 //
 //

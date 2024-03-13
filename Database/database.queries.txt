@@ -57,7 +57,7 @@ CREATE TABLE Players (
     playerAddress VARCHAR(500) NOT NULL,
     playerPassword VARCHAR(2000) NOT NULL,
     managerName VARCHAR(255) NOT NULL,
-    isActive INT DEFAULT 1 NOT NULL,
+    isActive INT DEFAULT 0 NOT NULL,
     updateStatus INT DEFAULT 0 NOT NULL,
     isSuspended INT DEFAULT 0 NOT NULL,
     isInjured INT DEFAULT 0 NOT NULL,
