@@ -5,7 +5,7 @@ const router = express.Router();
 const AdminController = require('../../controllers/AdminControllers/admin.controller');
 
 
-router.post("/adminRegistration", AdminController.registration);
+// router.post("/adminRegistration", AdminController.registration);
 router.post("/adminLogin", AdminController.login);
 router.post("/adminChangePassword", AdminController.changePassword);
 router.post("/adminViewProfile", AdminController.viewProfile);
