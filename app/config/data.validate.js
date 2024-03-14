@@ -227,8 +227,8 @@ function isValidAddress(address) {
         };
     }
     return {
-        isValid: address.trim().length <= 100,
-        message: "Address should not exceed 100 characters"
+        isValid: address.trim().length <= 2000,
+        message: "Address should not exceed 2000 characters."
     };
 }
 
