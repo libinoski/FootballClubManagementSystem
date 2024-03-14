@@ -1103,7 +1103,6 @@ exports.viewOnePlayer = async (req, res) => {
                 } catch (error) {
                     console.error("Error viewing one player:", error);
                     if (
-                        error.message === "Player not found for this club" ||
                         error.message === "Club not found"
                     ) {
                         return res.status(422).json({
@@ -1986,7 +1985,7 @@ exports.addOneInjuryUpdate = async (req, res) => {
                 console.error("Error submitting injury details by club:", error);
 
                 // Return appropriate error response
-                if (error.message === "Club not foundd" || error.message === "Player not found or not associated with the specified club") {
+                if (error.message === "Club not found") {
                     return res.status(422).json({
                         status: "error",
                         error: error.message

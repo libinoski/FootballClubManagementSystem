@@ -76,12 +76,13 @@ CREATE TABLE Injuries (
     playerImage VARCHAR(2000) NOT NULL,
     clubName VARCHAR(255) NOT NULL,
     injuryType VARCHAR(255) NOT NULL,
-    averageRecoveryTime INT NOT NULL,
+    averageRecoveryTime VARCHAR(100) NOT NULL,
     deleteStatus INT DEFAULT 0 NOT NULL,
-    injuryDate DATE NOT NULL,
+    injuryDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE,
     FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE
 );
+
 
 
 
@@ -114,7 +115,7 @@ CREATE TABLE FootballNews (
     footballNewsId INT PRIMARY KEY AUTO_INCREMENT,
     adminId INT NOT NULL,
     footballNewsImage VARCHAR(2000) NOT NULL,
-    footballNewsTItle VARCHAR(2000) NOT NULL,
+    footballNewsTitle VARCHAR(2000) NOT NULL,
     footballNewsContent VARCHAR(2000) NOT NULL,
     addedDate DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updatedDate DATETIME DEFAULT NULL,

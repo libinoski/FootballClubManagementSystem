@@ -342,9 +342,8 @@ Club.viewOnePlayer = async (clubId, playerId) => {
         "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isActive = 1 AND isSuspended = 0 AND deleteStatus = 0 AND isApproved = 1";
       const player = await dbQuery(viewPlayerQuery, [playerId, clubId]);
   
-      if (player.length === 0) {
-        throw new Error("Player not found for this club");
-      }
+
+      
   
       return player[0];
     } catch (error) {
@@ -623,51 +622,57 @@ Club.sendNotificationToPlayer = async (clubId, playerId, message) => {
 // CLUB ADD ONE INJURY UPDATE
 Club.addOneInjuryUpdate = async (playerId, clubId, injuryData) => {
     try {
-        // Check if the club exists and is active
-        const clubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspened = 0";
-        const [clubResult] = await db.query(clubQuery, [clubId]);
-        
-        if (clubResult.length === 0) {
+        const clubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
+        const clubResult = await dbQuery(clubQuery, [clubId]);
+        if (!clubResult || clubResult.length === 0) {
             throw new Error('Club not found');
         }
 
-        // Check if the player exists and is associated with the specified club
+        const club = clubResult[0];
+        const clubName = club.clubName;
+
         const playerQuery = "SELECT * FROM Players WHERE playerId = ? AND clubId = ?";
-        const [playerResult] = await db.query(playerQuery, [playerId, clubId]);
-        
-        if (playerResult.length === 0) {
+        const playerResult = await dbQuery(playerQuery, [playerId, clubId]);
+        if (!playerResult || playerResult.length === 0) {
             throw new Error('Player not found or not associated with the specified club');
         }
 
-        // Insert injury data into the database
+
+        const player = playerResult[0];
+        const playerName = player.playerName;
+        const playerImage = player.playerImage;
+
+
+
         const insertInjuryQuery = `
-            INSERT INTO Injuries
-            (playerId, clubId, playerName, playerImage, clubName, injuryType, averageRecoveryTime)
+            INSERT INTO Injuries (playerId, clubId, playerName, playerImage, clubName, injuryType, averageRecoveryTime)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         const insertInjuryValues = [
             playerId,
             clubId,
-            playerResult[0].playerName,
-            playerResult[0].playerImage,
-            clubResult[0].clubName,
+            playerName,
+            playerImage,
+            clubName,
             injuryData.injuryType,
-            injuryData.averageRecoveryTime
+            injuryData.averageRecoveryTime,
         ];
 
-        await db.query(insertInjuryQuery, insertInjuryValues);
+        await dbQuery(insertInjuryQuery, insertInjuryValues);
 
-        // Return the inserted injury data along with playerId and clubId
         return {
             playerId,
             clubId,
             ...injuryData
         };
     } catch (error) {
-        console.error('Error in addOneInjuryUpdate:', error);
-        throw error;
+        console.error('Error in addOneInjuryUpdate:', error.message);
+        throw new Error('Error submitting injury details by club: ' + error.message);
     }
 };
+
+
+
 //
 //
 //
