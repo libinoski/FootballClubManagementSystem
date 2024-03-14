@@ -357,31 +357,21 @@ Player.viewOneNotification = async (notificationId, playerId) => {
 //
 //
 // PLAYER SEND LEAVE REQUEST TO CLUB
-Player.sendLeaveRequestToClub = async (clubId, playerId, message) => {
+Player.sendLeaveRequestToClub = async (playerId, message) => {
     try {
-        // Check if the club exists and is active
-        const checkClubQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND deleteStatus = 0";
-        const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
-        if (clubCheckResult.length === 0) {
-            throw new Error("Club not found");
-        }
-
-        // Fetch player name from the Players table
-        const fetchPlayerNameQuery = "SELECT playerName FROM Players WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0";
-        const playerNameResult = await dbQuery(fetchPlayerNameQuery, [playerId]);
-        if (playerNameResult.length === 0) {
+        const CheckPlayerQuery = "SELECT clubId, playerName FROM Players WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0";
+        const playerCheckResult = await dbQuery(CheckPlayerQuery, [playerId]);
+        if (playerCheckResult.length === 0) {
             throw new Error("Player not found or not active");
         }
-        const playerName = playerNameResult[0].playerName;
+        const playerName = playerCheckResult[0].playerName;
+        const clubId = playerCheckResult[0].clubId;
 
-        // Insert the leave request into the database
         const insertLeaveRequestQuery = "INSERT INTO Leave_Request_To_Club (clubId, playerId, playerName, message) VALUES (?, ?, ?, ?)";
         const result = await dbQuery(insertLeaveRequestQuery, [clubId, playerId, playerName, message]);
 
-        // Retrieve the inserted leave request ID
         const leaveRequestId = result.insertId;
 
-        // Construct the leave request details object
         const leaveRequestDetails = {
             leaveRequestId: leaveRequestId,
             clubId: clubId,
@@ -441,21 +431,30 @@ Player.viewAllApprovedLeaveRequests = async (playerId) => {
 // PLAYER VIEW ALL MATCHES
 Player.viewAllMatches = async (playerId) => {
     try {
-        // Check if playerId exists
-        const playerExistsQuery = "SELECT * FROM Players WHERE playerId = ? AND deleteStatus = 0 AND isSuspended = 0";
-        const playerExistsResult = await db.query(playerExistsQuery, [playerId]);
-
-        if (playerExistsResult[0].count === 0) {
-            throw new Error("Player not found");
-        }
-        const query = "SELECT * FROM Matches WHRE endStatus = 0 AND deleteStatus = 0";
-        const matches = await db.query(query);
-        return matches;
+      const checkPlayerQuery = `
+              SELECT playerId
+              FROM Players
+              WHERE playerId = ? AND isActive = 1 AND isSuspended = 0
+          `;
+      const playerCheckResult = await dbQuery(checkPlayerQuery, [playerId]);
+  
+      if (playerCheckResult.length === 0) {
+        throw new Error("player not found");
+      }
+  
+      const viewAllMatchQuery = `
+              SELECT * FROM Matches
+              WHERE deleteStatus = 0 AND endStatus = 0 
+              ORDER BY matchDate DESC
+          `;
+      const allMatches = await dbQuery(viewAllMatchQuery);
+  
+      return allMatches;
     } catch (error) {
-        console.error("Error viewing all matches:", error);
-        throw error;
+      console.error("Error viewing all football matches:", error);
+      throw error;
     }
-};
+  };
 //
 //
 //
@@ -463,33 +462,33 @@ Player.viewAllMatches = async (playerId) => {
 // PLAYER VIEW ONE MATCH 
 Player.viewOneMatch = async (matchId, playerId) => {
     try {
-
-        // Check if playerId exists
-        const playerExistsQuery = "SELECT * FROM Players WHERE playerId = ? AND deleteStatus = 0 AND isSuspended = 0";
-        const playerExistsResult = await db.query(playerExistsQuery, [playerId]);
-
-        if (playerExistsResult[0].count === 0) {
-            throw new Error("Player not found");
-        }
-
-        // Query to fetch the match details based on matchId
-        const query = "SELECT * FROM Matches WHERE matchId = ? AND deleteStatus = 0";
-
-        // Execute the query
-        const match = await dbQuery(query, [matchId]);
-
-        // Check if match is found
-        if (match.length === 0) {
-            throw new Error("Match not found");
-        }
-
-        // Return the match details
-        return match[0];
+      const verifyPlayerQuery = `
+              SELECT playerId
+              FROM Players
+              WHERE playerId = ? AND isActive = 1 AND isSuspended = 0
+          `;
+      const playerResult = await dbQuery(verifyPlayerQuery, [playerId]);
+  
+      if (playerResult.length === 0) {
+        throw new Error("Player not found");
+      }
+  
+      const query = `
+              SELECT * FROM Matches
+              WHERE matchId = ? AND deleteStatus = 0  AND endStatus = 0 
+          `;
+      const result = await dbQuery(query, [matchId]);
+  
+      if (result.length === 0) {
+        throw new Error("Match not found");
+      }
+  
+      return result[0];
     } catch (error) {
-        console.error("Error viewing one match:", error);
-        throw error;
+      console.error("Error fetching football match:", error);
+      throw error;
     }
-};
+  };
 //
 //
 //

@@ -19,6 +19,7 @@ router.post("/playerViewOneMatch", PlayerController.viewOneMatch);
 router.post("/playerViewAllMatchPoints", PlayerController.viewAllMatchPoints);
 router.post("/playerViewAllNews", PlayerController.viewAllNews);
 router.post("/playerViewOneNews", PlayerController.viewOneNews);
+router.post("/playerViewAllClubs", PlayerController.viewAllClubs);
 
 
 

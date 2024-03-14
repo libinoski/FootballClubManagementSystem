@@ -271,7 +271,6 @@ Your Sports Club Team
 //
 //
 // PLAYER LOGIN
-// PLAYER LOGIN
 exports.login = async (req, res) => {
     const { playerEmail, playerPassword } = req.body;
 
@@ -913,7 +912,7 @@ exports.viewOneNotification = async (req, res) => {
 exports.sendLeaveRequestToClub = async (req, res) => {
     try {
         const token = req.headers.token;
-        const { clubId, playerId, message } = req.body;
+        const { playerId, message } = req.body;
 
         // Check if token is provided
         if (!token) {
@@ -923,13 +922,6 @@ exports.sendLeaveRequestToClub = async (req, res) => {
             });
         }
 
-        // Check if clubId, playerId, and message are provided
-        if (!clubId) {
-            return res.status(401).json({
-                status: "error",
-                message: "Club ID is missing"
-            });
-        }
         if (!playerId) {
             return res.status(401).json({
                 status: "error",
@@ -938,7 +930,7 @@ exports.sendLeaveRequestToClub = async (req, res) => {
         }
 
         // Token verification
-        jwt.verify(token, process.env.JWT_SECRET_KEY_CLUB, async (err, decoded) => {
+        jwt.verify(token, process.env.JWT_SECRET_KEY_PLAYER, async (err, decoded) => {
             if (err) {
                 if (err.name === "JsonWebTokenError") {
                     return res.status(403).json({
@@ -997,7 +989,7 @@ exports.sendLeaveRequestToClub = async (req, res) => {
 
             try {
                 // Send leave request to club
-                const leaveRequestDetails = await Player.sendLeaveRequestToClub(clubId, playerId, message);
+                const leaveRequestDetails = await Player.sendLeaveRequestToClub(playerId, message);
 
                 // Return success response
                 return res.status(200).json({
