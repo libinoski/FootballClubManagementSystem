@@ -1,0 +1,156 @@
+1. Admins Table
+
+CREATE TABLE Admins (
+    adminId INT PRIMARY KEY AUTO_INCREMENT,
+    adminName VARCHAR(255) NOT NULL,
+    adminEmail VARCHAR(255) NOT NULL,
+    adminMobile VARCHAR(200) NOT NULL,
+    adminAddress VARCHAR(500) NOT NULL,
+    adminImage VARCHAR(2000) NOT NULL,
+    adminPassword VARCHAR(2000) NOT NULL,
+    registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    isActive INT DEFAULT 1 NOT NULL,
+    deleteStatus INT DEFAULT 0 NOT NULL,
+    updateStatus INT DEFAULT 0 NOT NULL,
+    passwordUpdatedStatus INT DEFAULT 0 NOT NULL
+);
+
+
+2. Clubs Table
+
+CREATE TABLE Clubs (
+    clubId INT PRIMARY KEY AUTO_INCREMENT,
+    clubName VARCHAR(255) NOT NULL,
+    clubImage VARCHAR(2000) NOT NULL,
+    clubEmail VARCHAR(255) NOT NULL,
+    clubAddress VARCHAR(255) NOT NULL,
+    managerName VARCHAR(200) NOT NULL,
+    managerImage VARCHAR(2000) NOT NULL,
+    managerEmail VARCHAR(255) NOT NULL,
+    managerMobile VARCHAR(20),
+    clubPassword VARCHAR(2000) NOT NULL,
+    isActive INT DEFAULT 1 NOT NULL,
+    isSuspended INT DEFAULT 0 NOT NULL,
+    updateStatus INT DEFAULT 1 NOT NULL,
+    registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+
+3. Player Table
+
+
+
+CREATE TABLE Players (
+    playerId INT PRIMARY KEY AUTO_INCREMENT,
+    clubId INT NOT NULL,
+    clubName VARCHAR (255) NOT NULL,
+    playerName VARCHAR(255) NOT NULL,
+    playerImage VARCHAR(2000) NOT NULL,
+    playerAge INT NOT NULL,
+    playerEmail VARCHAR(255) NOT NULL,
+    playerMobile VARCHAR(20) NOT NULL,
+    playerCountry VARCHAR(100) NOT NULL,
+    playerPosition VARCHAR(255) NOT NULL,
+    playerAddress VARCHAR(500) NOT NULL,
+    playerPassword VARCHAR(2000) NOT NULL,
+    managerName VARCHAR(255) NOT NULL,
+    isActive INT DEFAULT 0 NOT NULL,
+    updateStatus INT DEFAULT 0 NOT NULL,
+    isSuspended INT DEFAULT 0 NOT NULL,
+    isInjured INT DEFAULT 0 NOT NULL,
+    isApproved INT DEFAULT 0 NOT NULL,
+    registeredDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE
+);
+
+4. Injuries Table
+
+CREATE TABLE Injuries (
+    injuryId INT PRIMARY KEY AUTO_INCREMENT,
+    playerId INT NOT NULL,
+    clubId INT NOT NULL,
+    playerName VARCHAR(255) NOT NULL,
+    playerImage VARCHAR(2000) NOT NULL,
+    clubName VARCHAR(255) NOT NULL,
+    injuryType VARCHAR(255) NOT NULL,
+    averageRecoveryTime VARCHAR(100) NOT NULL,
+    deleteStatus INT DEFAULT 0 NOT NULL,
+    injuryDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE
+);
+
+
+
+
+5. Matches
+
+CREATE TABLE Matches (
+    matchId INT PRIMARY KEY AUTO_INCREMENT,
+    adminId INT NOT NULL,
+    matchName VARCHAR(255) NOT NULL,
+    homeTeamName VARCHAR(255) NOT NULL,
+    awayTeamName VARCHAR(255) NOT NULL,
+    homeTeamImage VARCHAR(2000) NOT NULL,
+    awayTeamImage VARCHAR(2000) NOT NULL,
+    matchLocation VARCHAR(255) NOT NULL,
+    matchPrize VARCHAR(50) NOT NULL,
+    teamOneTotalGoalsInMatch VARCHAR(2) DEFAULT 0 NOT NULL,
+    teamTwoTotalGoalsInMatch VARCHAR(2) DEFAULT 0 NOT NULL,
+    matchDate VARCHAR(50) NOT NULL,
+    endStatus INT DEFAULT 0 NOT NULL,
+    deleteStatus INT DEFAULT 0 NOT NULL,
+    FOREIGN KEY (adminId) REFERENCES Admins(adminId) ON DELETE CASCADE
+);
+
+
+
+
+6. FootballNews
+
+CREATE TABLE FootballNews (
+    footballNewsId INT PRIMARY KEY AUTO_INCREMENT,
+    adminId INT NOT NULL,
+    footballNewsImage VARCHAR(2000) NOT NULL,
+    footballNewsTitle VARCHAR(2000) NOT NULL,
+    footballNewsContent VARCHAR(2000) NOT NULL,
+    addedDate DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    deleteStatus INT DEFAULT 0 NOT NULL,
+    FOREIGN KEY (adminId) REFERENCES Admins(adminId) ON DELETE CASCADE
+);
+
+
+7. Notification_To_Players
+
+CREATE TABLE Notification_To_Players (
+    notificationId INT PRIMARY KEY AUTO_INCREMENT,
+    clubId INT NOT NULL,
+    playerId INT NOT NULL,
+    message VARCHAR(2000) NOT NULL,
+    sendDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    isSuccess INT DEFAULT 1,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE,
+    FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE
+);
+
+7. Leave_Request_To_Club
+
+CREATE TABLE Leave_Request_To_Club (
+    leaveRequestId INT PRIMARY KEY AUTO_INCREMENT,
+    clubId INT NOT NULL,
+    playerId INT NOT NULL,
+    playerName VARCHAR(200) NOT NULL,
+    message VARCHAR(2000) NOT NULL,
+    sendDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    isSuccess INT DEFAULT 1,
+    isApproved INT DEFAULT 0,
+    FOREIGN KEY (clubId) REFERENCES Clubs(clubId) ON DELETE CASCADE,
+    FOREIGN KEY (playerId) REFERENCES Players(playerId) ON DELETE CASCADE
+);
+
+
+
