@@ -864,7 +864,7 @@ exports.viewOneNotification = async (req, res) => {
                     });
                 }
 
-                const notification = await Player.viewOneNotification(playerId, notificationId);
+                const notification = await Player.viewOneNotificationFromClub(playerId, notificationId);
 
                 return res.status(200).json({
                     status: "success",
@@ -1098,7 +1098,7 @@ exports.viewAllApprovedLeaveRequests = async (req, res) => {
                         message: "Player not found or not active",
                         error: error.message
                     });
-                } else if (error.message === "No approved leave requests found for this player") {
+                } else if (error.message === "No approved leave requets found for this player") {
                     return res.status(404).json({
                         status: "error",
                         message: "No approved leave requests found for this player",

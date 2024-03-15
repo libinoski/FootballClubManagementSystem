@@ -284,7 +284,7 @@ Player.updateProfile = async (updatedPlayer) => {
 // PLAYER VIEW ALL NOTIFICATIONS FROM CLUB
 Player.viewAllNotifications = async (playerId) => {
     try {
-        // Fetch patient details
+        // Fetch player details
         const playerQuery = `
             SELECT *
             FROM Players
@@ -320,38 +320,36 @@ Player.viewAllNotifications = async (playerId) => {
 //
 // 
 // PLAYER VIEW ONE NOTIFICATION
-Player.viewOneNotification = async (notificationId, playerId) => {
+Player.viewOneNotificationFromClub = async (playerId, notificationId) => {
     try {
-        // Check if playerId exists in Players table
-        const playerQuery = `
-            SELECT *
-            FROM Players
-            WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
-        `;
-        const playerResult = await dbQuery(playerQuery, [playerId]);
-
-        if (playerResult.length === 0) {
-            throw new Error("Player not found or not active");
-        }
-
-        // Fetch notification details
-        const notificationQuery = `
-            SELECT *
-            FROM Notification_To_Players
-            WHERE notificationId = ? AND playerId = ?
-        `;
-        const notificationResult = await dbQuery(notificationQuery, [notificationId, playerId]);
-
-        if (notificationResult.length === 0) {
-            throw new Error("Notification not found for this player");
-        }
-
-        return notificationResult[0]; // Return notification details
+      const verifyPlayerQuery = `
+              SELECT playerId
+              FROM Players
+              WHERE playerId = ? AND isActive = 1 AND isSuspended = 0
+          `;
+      const playerResult = await dbQuery(verifyPlayerQuery, [playerId]);
+  
+      if (playerResult.length === 0) {
+        throw new Error("Player not found");
+      }
+  
+      const query = `
+              SELECT * FROM Notification_To_Players
+              WHERE notificationId = ? AND playerId = ?
+          `;
+      const result = await dbQuery(query, [notificationId, playerId]);
+  
+      if (result.length === 0) {
+        throw new Error("Notification not found");
+      }
+  
+      return result[0];
     } catch (error) {
-        console.error("Error viewing notification for player:", error);
-        throw error;
+      console.error("Error fetching notification:", error);
+      throw error;
     }
 };
+
 //
 //
 //
@@ -393,37 +391,38 @@ Player.sendLeaveRequestToClub = async (playerId, message) => {
 // PLAYER VIEW ALL APPROVED LEAVE REQUESTS FROM CLUB
 Player.viewAllApprovedLeaveRequests = async (playerId) => {
     try {
-        // Check if playerId exists in Players table
+        // Fetch player details
         const playerQuery = `
             SELECT *
             FROM Players
             WHERE playerId = ? AND isActive = 1 AND deleteStatus = 0 AND isSuspended = 0
         `;
-        const playerResult = await dbQuery(playerQuery, [playerId]);
+        const playerQueryResult = await dbQuery(playerQuery, [playerId]);
 
-        if (playerResult.length === 0) {
-            throw new Error("Player not found or not active");
+        if (playerQueryResult.length === 0) {
+            throw new Error("player not found");
         }
 
-        // Fetch all approved leave requests for the player
-        const leaveRequestsQuery = `
+        // Fetch all notifications for the patient
+        const viewAllApprovedLeaveRequests = `
             SELECT *
             FROM Leave_Request_To_Club
             WHERE playerId = ? AND isApproved = 1
         `;
-        const leaveRequests = await dbQuery(leaveRequestsQuery, [playerId]);
+        const allApprovedLeaveRequests = await dbQuery(viewAllApprovedLeaveRequests, [playerId]);
 
-        // Check if there are no approved leave requests found
-        if (leaveRequests.length === 0) {
-            throw new Error("No approved leave requests found for this player");
+        // Check if there are no notifications found
+        if (allApprovedLeaveRequests.length === 0) {
+            throw new Error("No approved leave requets found for this player");
         }
 
-        return leaveRequests; // Return approved leave requests
+        return allApprovedLeaveRequests; // Return notifications
     } catch (error) {
-        console.error("Error viewing approved leave requests for player:", error);
+        console.error("Error viewing all approved notifications for player:", error);
         throw error;
     }
 };
+
 //
 //
 //
@@ -496,32 +495,23 @@ Player.viewOneMatch = async (matchId, playerId) => {
 // PLAYER VIEW ALL MATCH POINTS
 Player.viewAllMatchPoints = async (playerId) => {
     try {
-      // Check if the player exists
-      const playerExistsQuery = "SELECT * FROM Players WHERE playerId = ? AND deleteStatus = 0 AND isActive = 1";
+      const playerExistsQuery = "SELECT * FROM Players WHERE playerId = ? AND isSuspended = 0 AND isActive = 1";
       const playerExistsResult = await dbQuery(playerExistsQuery, [playerId]);
   
       if (playerExistsResult.length === 0) {
         throw new Error("Player not found");
       }
   
-      // Query to fetch all match points, ordered by addedDate
-      const query = `
-        SELECT pointId, teamOneName, teamTwoName, teamOneImage, teamTwoImage,
-               teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch, addedDate
-        FROM Points
-        ORDER BY addedDate DESC
-      `;
-      
-      // Execute the query
+      const query = `SELECT * FROM Matches ORDER BY matchDate ASC`;
+  
       const matchPoints = await dbQuery(query);
   
-      // Return the match points
       return matchPoints;
     } catch (error) {
       console.error("Error viewing all match points:", error);
       throw error;
     }
-  };
+  };  
 //
 //
 //

@@ -530,7 +530,7 @@ Club.viewAllSuspendedPlayers = async (clubId) => {
       }
   
       const viewSuspendedPlayersQuery =
-        "SELECT * FROM Players WHERE clubId = ? AND isSuspended = 1 AND isActive = 0 AND deleteStatus = 0";
+        "SELECT * FROM Players WHERE clubId = ? AND isSuspended = 1";
       const suspendedPlayers = await dbQuery(viewSuspendedPlayersQuery, [clubId]);
   
       return suspendedPlayers;
@@ -556,7 +556,7 @@ Club.viewOneSuspendedPlayer = async (playerId, clubId) => {
       }
   
       const viewOneSuspendedPlayerQuery =
-        "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isSuspended = 1 AND isActive = 0 AND deleteStatus = 0";
+        "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isSuspended = 1";
       const suspendedPlayerDetails = await dbQuery(viewOneSuspendedPlayerQuery, [
         playerId,
         clubId,
@@ -670,9 +670,6 @@ Club.addOneInjuryUpdate = async (playerId, clubId, injuryData) => {
         throw new Error('Error submitting injury details by club: ' + error.message);
     }
 };
-
-
-
 //
 //
 //
@@ -870,7 +867,6 @@ Club.viewOneMatch = async (matchId, clubId) => {
 // CLUB VIEW ALL MATCH POINTS
 Club.viewAllMatchPoints = async (clubId) => {
     try {
-      // Check if the admin exists
       const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isSuspended = 0 AND isActive = 1";
       const clubExistsResult = await dbQuery(clubExistsQuery, [clubId]);
   
@@ -878,19 +874,17 @@ Club.viewAllMatchPoints = async (clubId) => {
         throw new Error("Club not found");
       }
   
-      // Query to fetch all columns from Matches table, ordered by matchDate in ascending order
       const query = `SELECT * FROM Matches ORDER BY matchDate ASC`;
   
-      // Execute the query
       const matchPoints = await dbQuery(query);
   
-      // Return the match points
       return matchPoints;
     } catch (error) {
       console.error("Error viewing all match points:", error);
       throw error;
     }
   };
+  
 //
 //
 //
