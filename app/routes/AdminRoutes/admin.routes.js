@@ -22,6 +22,7 @@ router.post("/adminViewAllEndedMatches", AdminController.viewAllEndedMatches);
 router.post("/adminViewOneEndedMatch", AdminController.viewOneEndedMatch);
 router.post("/adminAddMatchPoint", AdminController.addMatchPoint);
 router.post("/adminViewAllMatchPoints", AdminController.viewAllMatchPoints);
+router.post("/adminViewAllClubs", AdminController.viewAllClubs);
 
 
 

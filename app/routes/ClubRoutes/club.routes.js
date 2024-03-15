@@ -30,6 +30,7 @@ router.post("/clubViewOneMatch", ClubController.viewOneMatch);
 router.post("/clubViewAllMatchPoints", ClubController.viewAllMatchPoints);
 router.post("/clubViewAllNews", ClubController.viewAllNews);
 router.post("/clubViewOneNews", ClubController.viewOneNews);
+router.post("/clubViewAllClubs", ClubController.viewAllClubs);
 
 
 

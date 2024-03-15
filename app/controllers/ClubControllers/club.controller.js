@@ -2142,7 +2142,7 @@ exports.viewOneLeaveRequest = async (req, res) => {
         }
 
         // Verifying the token
-        jwt.verify(token, process.env.JWT_SECRET_KEY_PLAYER, async (err, decoded) => {
+        jwt.verify(token, process.env.JWT_SECRET_KEY_CLUB, async (err, decoded) => {
             if (err) {
                 if (err.name === "JsonWebTokenError") {
                     return res.status(403).json({
@@ -2239,7 +2239,7 @@ exports.approveOneLeaveRequest = async (req, res) => {
         }
 
         // Verifying the token
-        jwt.verify(token, process.env.JWT_SECRET_KEY_PLAYER, async (err, decoded) => {
+        jwt.verify(token, process.env.JWT_SECRET_KEY_CLUB, async (err, decoded) => {
             if (err) {
                 if (err.name === "JsonWebTokenError") {
                     return res.status(403).json({
@@ -2307,7 +2307,7 @@ exports.approveOneLeaveRequest = async (req, res) => {
 //
 //
 //
-// CLUB VIEW ALL MATCH
+// CLUB VIEW ALL MATCHES
 exports.viewAllMatches = async (req, res) => {
     const token = req.headers.token;
     const { clubId } = req.body;
@@ -2505,7 +2505,6 @@ exports.viewOneMatch = async (req, res) => {
 //
 //
 //
-//
 // CLUB VIEW ALL MATCH POINTS
 exports.viewAllMatchPoints = async (req, res) => {
     const token = req.headers.token;
@@ -2593,7 +2592,6 @@ exports.viewAllMatchPoints = async (req, res) => {
         });
     }
 };
-//
 //
 //
 //
@@ -2686,9 +2684,6 @@ exports.viewAllNews = async (req, res) => {
         });
     }
 };
-//
-//
-//
 //
 //
 //
@@ -2794,6 +2789,33 @@ exports.viewOneNews = async (req, res) => {
         });
     }
 };
+//
+//
+//
+//
+//
+// CLUB VIEW ALL CLUBS
+exports.viewAllClubs = async (req, res) => {
+    try {
+        const allClubData = await Club.viewAllClubs();
 
-
-
+        return res.status(200).json({
+            status: "success",
+            message: "All clubs are retrieved successfully",
+            data: allClubData,
+        });
+    } catch (error) {
+        console.error("Error viewing all clubs:", error);
+        if (error.message === "No clubs found") {
+            return res.status(422).json({
+                status: "failed",
+                message: "No clubs found"
+            });
+        } else {
+            return res.status(500).json({
+                status: "error",
+                message: "Internal server error"
+            });
+        }
+    }
+};

@@ -530,7 +530,7 @@ Club.viewAllSuspendedPlayers = async (clubId) => {
       }
   
       const viewSuspendedPlayersQuery =
-        "SELECT * FROM Players WHERE clubId = ? AND isSuspended = 1 AND isActive = 0 AND deleteStatus = 0";
+        "SELECT * FROM Players WHERE clubId = ? AND isSuspended = 1";
       const suspendedPlayers = await dbQuery(viewSuspendedPlayersQuery, [clubId]);
   
       return suspendedPlayers;
@@ -556,7 +556,7 @@ Club.viewOneSuspendedPlayer = async (playerId, clubId) => {
       }
   
       const viewOneSuspendedPlayerQuery =
-        "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isSuspended = 1 AND isActive = 0 AND deleteStatus = 0";
+        "SELECT * FROM Players WHERE playerId = ? AND clubId = ? AND isSuspended = 1";
       const suspendedPlayerDetails = await dbQuery(viewOneSuspendedPlayerQuery, [
         playerId,
         clubId,
@@ -670,9 +670,6 @@ Club.addOneInjuryUpdate = async (playerId, clubId, injuryData) => {
         throw new Error('Error submitting injury details by club: ' + error.message);
     }
 };
-
-
-
 //
 //
 //
@@ -683,7 +680,7 @@ Club.viewAllLeaveRequests = async (clubId) => {
         // Fetch club details
         const clubQuery = `
             SELECT *
-            FROM Players
+            FROM Clubs
             WHERE clubId = ? AND isActive = 1 AND isSuspended = 0
         `;
         const clubQueryResult = await dbQuery(clubQuery, [clubId]);
@@ -702,7 +699,7 @@ Club.viewAllLeaveRequests = async (clubId) => {
 
         // Check if there are no leave requests found
         if (allLeaveRequests.length === 0) {
-            throw new Error("No successful leave requests found for this player");
+            throw new Error("No successful leave requests found for this club");
         }
 
         return allLeaveRequests; // Return leave requests
@@ -804,56 +801,65 @@ Club.approveOneLeaveRequest = async (leaveRequestId, clubId) => {
 // CLUB VIEW ALL MATCHES
 Club.viewAllMatches = async (clubId) => {
     try {
-    // Check if clubId exists
-    const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
-    const clubExistsResult = await db.query(clubExistsQuery, [clubId]);
-
-    if (clubExistsResult[0].count === 0) {
-      throw new Error("Club not found");
-    }
-        const query = "SELECT * FROM Matches WHRE endStatus = 0 AND deleteStatus = 0";
-        const matches = await db.query(query);
-        return matches;
+      const checkClubQuery = `
+              SELECT clubId
+              FROM Clubs
+              WHERE clubId = ? AND isActive = 1 AND isSuspended = 0
+          `;
+      const clubCheckResult = await dbQuery(checkClubQuery, [clubId]);
+  
+      if (clubCheckResult.length === 0) {
+        throw new Error("Club not found");
+      }
+  
+      const viewAllMatchQuery = `
+              SELECT * FROM Matches
+              WHERE deleteStatus = 0 AND endStatus = 0 
+              ORDER BY matchDate DESC
+          `;
+      const allMatches = await dbQuery(viewAllMatchQuery);
+  
+      return allMatches;
     } catch (error) {
-        console.error("Error viewing all matches:", error);
-        throw error;
+      console.error("Error viewing all football matches:", error);
+      throw error;
     }
-};
+  };
 //
 //
 //
 //
 //
 // CLUB VIEW ONE MATCH
-Club.viewOneMatch = async (clubId,matchId) => {
+Club.viewOneMatch = async (matchId, clubId) => {
     try {
-
-    // Check if clubId exists
-    const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isActive = 1 AND isSuspended = 0";
-    const clubExistsResult = await db.query(clubExistsQuery, [clubId]);
-
-    if (clubExistsResult[0].count === 0) {
-      throw new Error("Club not found");
-    }
-
-        // Query to fetch the match details based on matchId
-        const query = "SELECT * FROM Matches WHERE matchId = ? AND deleteStatus = 0";
-        
-        // Execute the query
-        const match = await dbQuery(query, [matchId]);
-
-        // Check if match is found
-        if (match.length === 0) {
-            throw new Error("Match not found");
-        }
-
-        // Return the match details
-        return match[0];
+      const verifyClubQuery = `
+              SELECT clubId
+              FROM Clubs
+              WHERE clubId = ? AND isActive = 1 AND isSuspended = 0
+          `;
+      const clubResult = await dbQuery(verifyClubQuery, [clubId]);
+  
+      if (clubResult.length === 0) {
+        throw new Error("Club not found");
+      }
+  
+      const query = `
+              SELECT * FROM Matches
+              WHERE matchId = ? AND deleteStatus = 0  AND endStatus = 0 
+          `;
+      const result = await dbQuery(query, [matchId]);
+  
+      if (result.length === 0) {
+        throw new Error("Match not found");
+      }
+  
+      return result[0];
     } catch (error) {
-        console.error("Error viewing one match:", error);
-        throw error;
+      console.error("Error fetching football match:", error);
+      throw error;
     }
-};
+  };
 //
 //
 //
@@ -861,7 +867,6 @@ Club.viewOneMatch = async (clubId,matchId) => {
 // CLUB VIEW ALL MATCH POINTS
 Club.viewAllMatchPoints = async (clubId) => {
     try {
-      // Check if the club exists
       const clubExistsQuery = "SELECT * FROM Clubs WHERE clubId = ? AND isSuspended = 0 AND isActive = 1";
       const clubExistsResult = await dbQuery(clubExistsQuery, [clubId]);
   
@@ -869,24 +874,17 @@ Club.viewAllMatchPoints = async (clubId) => {
         throw new Error("Club not found");
       }
   
-      // Query to fetch all match points, ordered by addedDate
-      const query = `
-        SELECT pointId, teamOneName, teamTwoName, teamOneImage, teamTwoImage,
-               teamOneTotalGoalsInTheMatch, teamTwoTotalGoalsInTheMatch, addedDate
-        FROM Points
-        ORDER BY addedDate DESC
-      `;
-      
-      // Execute the query
+      const query = `SELECT * FROM Matches ORDER BY matchDate ASC`;
+  
       const matchPoints = await dbQuery(query);
   
-      // Return the match points
       return matchPoints;
     } catch (error) {
       console.error("Error viewing all match points:", error);
       throw error;
     }
   };
+  
 //
 //
 //
@@ -954,7 +952,30 @@ Club.viewOneNews = async (footballNewsId, clubId) => {
       throw error;
     }
   };
-  
+//
+//
+//
+//
+//
+// CLUB VIEW ALL CLUBS
+Club.viewAllClubs = async () => {
+    try {
+        const viewAllClubsQuery = `
+        SELECT *
+        FROM Clubs
+        WHERE isActive = 1 AND isSuspended = 0
+      `;
+        const allClubs = await dbQuery(viewAllClubsQuery);
+
+        if (allClubs.length === 0) {
+            throw new Error("No clubs found");
+        }
+
+        return allClubs;
+    } catch (error) {
+        throw error;
+    }
+};
   
   
   

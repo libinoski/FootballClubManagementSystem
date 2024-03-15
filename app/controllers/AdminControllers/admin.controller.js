@@ -1988,8 +1988,6 @@ exports.addMatchPoint = async (req, res) => {
         }
     });
 };
-
-
 //
 //
 //
@@ -2087,5 +2085,30 @@ exports.viewAllMatchPoints = async (req, res) => {
 //
 //
 //
+// ADMIN VIEW ALL CLUBS
+exports.viewAllClubs = async (req, res) => {
+    try {
+        const allClubData = await Admin.viewAllClubs();
+
+        return res.status(200).json({
+            status: "success",
+            message: "All clubs are retrieved successfully",
+            data: allClubData,
+        });
+    } catch (error) {
+        console.error("Error viewing all clubs:", error);
+        if (error.message === "No clubs found") {
+            return res.status(422).json({
+                status: "failed",
+                message: "No clubs found"
+            });
+        } else {
+            return res.status(500).json({
+                status: "error",
+                message: "Internal server error"
+            });
+        }
+    }
+};
 
 

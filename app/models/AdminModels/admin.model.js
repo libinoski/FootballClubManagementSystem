@@ -573,6 +573,29 @@ Admin.viewAllMatchPoints = async (adminId) => {
     throw error;
   }
 };
+//
+//
+//
+//
+// Admin VIEW ALL CLUBS
+Admin.viewAllClubs = async () => {
+  try {
+      const viewAllClubsQuery = `
+      SELECT *
+      FROM Clubs
+      WHERE isActive = 1 AND isSuspended = 0
+    `;
+      const allClubs = await dbQuery(viewAllClubsQuery);
+
+      if (allClubs.length === 0) {
+          throw new Error("No clubs found");
+      }
+
+      return allClubs;
+  } catch (error) {
+      throw error;
+  }
+};
 
 
 
