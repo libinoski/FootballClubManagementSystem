@@ -179,9 +179,8 @@ Player.changePassword = async (playerId, oldPassword, newPassword) => {
         const updatePasswordQuery = `
             UPDATE Players
             SET
-                updatedDate = CURRENT_DATE(),
                 playerPassword = ?,
-                passwordUpdateStatus = 1
+                updateStatus = 1
             WHERE playerId = ? AND isActive = 1
         `;
 

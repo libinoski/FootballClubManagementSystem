@@ -117,9 +117,8 @@ Club.changePassword = async (clubId, oldPassword, newPassword) => {
         const updatePasswordQuery = `
             UPDATE Clubs
             SET
-                updatedDate = CURRENT_DATE(),
                 clubPassword = ?,
-                passwordUpdateStatus = 1
+                updateStatus = 1
             WHERE clubId = ? AND isActive = 1
         `;
 
